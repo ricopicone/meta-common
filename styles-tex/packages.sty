@@ -1,0 +1,281 @@
+
+% General
+
+\graphicspath{{.},{./figures},{./common},{./common/figures},{../../common},{../../common/figures}}
+\makeatletter
+  \providecommand*{\input@path}{}
+  \def\input@path{{.}{./}{./common}{./common/figures}}
+\makeatother
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+
+% \usepackage[export]{adjustbox} 
+% \usepackage{morewrites} % more files can be open
+\usepackage[subpreambles=true,sort=true]{standalone} % for standalone tikz figures
+\usepackage{layout} % print with \layout
+\usepackage[edges]{forest}
+\usepackage[os=mac]{menukeys}
+\renewmenumacro{\menu}[,]{roundedmenus}
+\renewmenumacro{\keys}[+]{roundedkeys}
+\usepackage{ifthen} % logic structures
+\usepackage{xifthen} % provides \isempty{}
+\usepackage{lipsum}
+\usepackage{verbatim}
+\usepackage{etoolbox}
+\usepackage{calc}
+% \usepackage{capt-of}
+\usepackage[margin=10pt,font=small,labelsep=period]{caption}
+  \DeclareCaptionJustification{nohyphen}{\hyphenpenalty=10000}
+  \captionsetup{justification=nohyphen}
+  \captionsetup[table]{font=small}
+  \captionsetup[longtable]{font=small}
+  \captionsetup[figure]{font=small}
+  \captionsetup[algorithm]{font=small}
+  \makeatletter
+  \renewcommand{\ALG@beginalgorithmic}{\small}
+  \makeatother
+\usepackage[all]{hypcap}
+\usepackage[noabbrev,capitalise,nameinlink]{cleveref}
+  \crefname{chapter}{chapter}{chapters}
+  \crefname{section}{section}{sections}
+  \crefname{subsection}{section}{sections}
+  \crefname{lab}{lab exercise}{lab exercises}
+  \crefname{resource}{resource}{resources}
+  \crefname{figure}{figure}{figures}
+  \crefname{table}{table}{tables}
+  \crefname{tcb@cnt@infobox}{box}{boxes}
+  \crefname{appendix}{appendix}{appendices}
+  \crefname{subappendix}{appendix}{appendices}
+  \crefname{subsubappendix}{appendix}{appendices}
+  \crefname{subsubsubappendix}{appendix}{appendices}
+  \crefname{exturl}{url}{urls}
+  \crefname{problem}{problem}{problems}
+  \crefname{labproblem}{lab problem}{lab problems}
+  \crefname{algorithm}{algorithm}{algorithms}
+  \crefname{example}{example}{examples}
+  \Crefname{example}{Example}{Examples}
+  \Crefname{algorithm}{Algorithm}{Algorithms}
+  \Crefname{chapter}{Chapter}{Chapters}
+  \Crefname{section}{Section}{Sections}
+  \Crefname{subsection}{Section}{Sections}
+  \Crefname{lab}{Lab exercise}{Lab exercises}
+  \Crefname{resource}{Resource}{Resources}
+  \Crefname{figure}{Figure}{Figures}
+  \Crefname{table}{Table}{Tables}
+  \Crefname{tcb@cnt@infobox}{Box}{Boxes}
+  \Crefname{appendix}{Appendix}{Appendices}
+  \Crefname{subappendix}{Appendix}{Appendices}
+  \Crefname{subsubappendix}{Appendix}{Appendices}
+  \Crefname{subsubsubappendix}{Appendix}{Appendices}
+  \Crefname{exturl}{url}{urls}
+  \Crefname{problem}{Problem}{Problems}
+  \Crefname{labproblem}{Lab problem}{Lab problems}
+  \crefformat{equation}{equation~(#2#1#3)}
+  \crefrangeformat{equation}{equations~(#3#1#4) to~(#5#2#6)}
+  \crefmultiformat{equation}{equations~(#2#1#3)}%
+    { and~(#2#1#3)}{, (#2#1#3)}{ and~(#2#1#3)}
+  \Crefformat{equation}{Equation~(#2#1#3)}
+  \Crefrangeformat{equation}{Equations~(#3#1#4) to~(#5#2#6)}
+  \Crefmultiformat{equation}{Equations~(#2#1#3)}%
+    { and~(#2#1#3)}{, (#2#1#3)}{ and~(#2#1#3)}
+  \newif\ifinappendix% Default is \inappendixfalse
+  \let\oldappendix\appendix% Store \appendix
+  \renewcommand{\appendix}{% Update \appendix
+    \oldappendix% Default \appendix
+    \inappendixtrue% Set switch to true
+  }
+  \newcommand{\creflastconjunction}{, and\nobreakspace} % use Oxford comma
+% \usepackage{url} % this is loaded by hyperref
+\usepackage{marginnote}
+% \usepackage{marginfix}
+\usepackage{mparhack} % having better luck with this than marginfix ... both on doesn't give errors but this seems to work better without marginfix
+\usepackage{subfiles}
+\usepackage{import}
+\usepackage{expl3}
+\usepackage[margin=.5ex]{subcaption}
+% \usepackage{float}
+%   \newfloat{algorithm}{thbp}{lop}
+%   \floatname{algorithm}{Algorithm}
+  % \floatstyle{plaintop}
+  % \restylefloat{algorithm}
+% \usepackage{enumitem} % custom enumerate labels
+  % \setlist{itemsep=0.5\baselineskip}
+% \usepackage{changepage} % loaded by another package
+\usepackage[normalem]{ulem} % underline
+\usepackage{flafter} % floats never float "up" so the can be guarantted to always appear after first reference
+\usepackage{placeins} % provides \FloatBarrier to clear floats
+\usepackage[splitrule,bottom]{footmisc} % footnote options
+\def\p{} % legacy
+
+% Lualatex building option
+\usepackage{ifluatex}
+\ifluatex
+\RequirePackage{luatex85}
+\usepackage{pdftexcmds} % pdfstrcmp not available in lualatex otherwise
+  \makeatletter
+  \let\pdfstrcmp\pdf@strcmp
+  \let\pdffilemoddate\pdf@filemoddate
+  \makeatother
+\fi
+
+% todo
+
+\IfEq{\draftorfinal}{draft}{%
+  \usepackage[textsize=footnotesize, colorinlistoftodos]{todonotes}
+}{% final
+  \usepackage[disable]{todonotes}
+}
+
+\newcommand{\cameron}[2][]{\todo[color=blue!60, #1]{Cameron: #2}}
+\newcommand{\rico}[2][]{\todo[color=red!60, #1]{Rico: #2}}
+\newcommand{\joe}[2][]{\todo[color=green!60, #1]{Joe: #2}}
+
+% Geometry (just for showframe, no adustments here)
+
+% \usepackage{showframe} % comment to turn off visible frame
+
+% Fonts
+
+\usepackage[final]{microtype} % nice microadjustments to fonts
+\usepackage{common/styles-tex/bookfonts}
+
+% Math macros
+\usepackage{common/styles-tex/bookmathmacros}
+
+% Color
+
+\usepackage{common/styles-tex/bookcolors}
+
+% Tables
+
+\usepackage{tabularx} % adjustable-width tables
+\usepackage{multirow} % for tabulars
+\usepackage{longtable}
+\usepackage{makecell} % for \makecell{two\\lines}
+\usepackage{threeparttable}
+
+% Math
+
+\usepackage{bm}
+\usepackage{array}
+\usepackage{cancel}
+\newcommand*{\carry}[1][1]{\overset{#1}}
+\newcolumntype{B}[1]{r*{#1}{@{\,}l}}
+\newcommand{\emptybox}[1]{\framebox{\vphantom{.}\rule{#1}{0mm}}}
+\newcommand{\mybox}[1]{\framebox[7em][c]{\vphantom{|}#1}}
+
+% Tikz and pgf
+
+\usepackage{common/styles-tex/booktikz}
+
+% Menukeys
+
+\usepackage{common/styles-tex/bookmenukeys}
+
+% Visible space
+
+\newcommand\Vtextvisiblespace[1][.3em]{%
+  \mbox{\kern.1em\vrule height.3ex}%
+  \vbox{\hrule width#1}%
+  \hbox{\vrule height.3ex}\kern.1em}
+\newcommand{\emp}{\Vtextvisiblespace}% For ease-of-use
+
+% Biblatex/Biber
+
+\RequirePackage{biblatex}
+\RequirePackage{csquotes,xpatch} % recommended with biblatex
+\begin{filecontents}{biblatex-dm.cfg}
+\DeclareDatamodelFields[type=field,datatype=verbatim,nullok=true]{hash}
+\DeclareDatamodelEntryfields{hash}
+\DeclareFieldFormat[misc]{hash}{}%
+\end{filecontents}
+\DeclareFieldFormat{url}{%
+  \iffieldundef{hash}
+    {\url{#1}}
+    {\myurlinline{#1}{\thefield{hash}}}%
+}
+\DeclareFieldFormat{doi}{\url{https://doi.org/#1}}
+% \DeclareFieldFormat{url}{\my{#1}}
+% \DeclareFieldFormat{url}{\href{file:#1}{\textbf{Open file}}}
+% \iffieldundef{url}
+%   {}
+%   {\stripzeros{\thefield{urlday}}\adddot}%
+
+\AtEveryBibitem{%
+  \csappto{blx@bbx@\thefield{entrytype}}{% put at end of entry
+      \iffieldundef{annotation}{}{%
+      \nopagebreak\\[0.25\baselineskip]\nopagebreak%
+      \printfield{annotation}
+    }
+  }
+}
+
+\makeatletter % for semicolon ; postnotedelim (https://tex.stackexchange.com/a/640153)
+\renewcommand*{\postnotedelim}{% Cf. N&B style
+  \ifboolexpr{%
+    test {\ifciteibid}%
+    and
+    (
+    test {\ifentrytype{jurisdiction}}%
+    or
+    test {\ifentrytype{legal}}%
+    or
+    test {\ifentrytype{legislation}}%
+    )
+  }%
+  {\addspace}%
+  {\iftoggle{cms@inlineibid}%
+    {\togglefalse{cms@inlineibid}%
+      \iffieldundef{prenote}% Bug fix
+      {}%
+      {\setunit{\cms@testspace}}}%
+    {\iffieldequalstr{entrysubtype}{classical}% For Notes+Bib, too?
+      {\DeclareNumChars*{abcdeABCDE:}%
+        \iffieldpages{postnote}%
+        {\setunit{\cms@testspace}}%
+        {\setunit{\addsemicolon\space}}}%
+      {\setunit{\addsemicolon\space}}\DeclareNumChars{.}}}}
+\makeatother
+
+% \DeclareSourcemap{ % remap the annote field to addedum for annotated bibliography
+%   \maps[datatype=bibtex]{
+%     \map{
+%       \step[fieldsource=annote, final]
+%       \step[fieldset=annotation, origfieldval, final]
+%       \step[fieldset=annote, null]
+%     }
+%   }
+% }
+\providetoggle{blx@lang@captions@english} % bug fix until biblatex v 3.15b released https://tex.stackexchange.com/questions/562068/cannot-use-polyglossia-babel-with-biblatex-in-luatex-etoolbox-toggle-undefined
+\usepackage{bibentry}
+
+% Index
+
+% \usepackage{imakeidx}
+% \indexprologue{Here's a prologue}
+
+% Empty pages
+
+\usepackage{emptypage} % will empty all blank pages from \cleardoublepage
+
+% Beamer/slideshows
+
+\RequirePackage[notheorems]{beamerarticle}
+% \let\solution\relax % xsim also defines this so load beamer first
+% \let\endsolution\relax
+% \let\Theorem\relax % tcolorbox also defines this so load beamer first
+% \let\endTheorem\relax
+% \let\Definition\relax % tcolorbox also defines this so load beamer first
+% \let\endDefinition\relax
+% \let\Corollary\relax % tcolorbox also defines this so load beamer first
+% \let\endCorollary\relax
+\ifdefined\onlythislecture % set at makefile level
+	\includeonlylecture{\onlythislecture}
+\fi
+
+% For copy editing
+% \usepackage{setspace}
+% \doublespacing
+
+% For bad page breaks
+\RequirePackage{needspace}

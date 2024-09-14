@@ -1,0 +1,20 @@
+{   
+    "ds": {
+        "D1": {
+            "description": "Python development system",
+            "language": "Python",
+            "ide": "VS Code",
+            "packages": {
+                "engcom": "0.0.0",
+                "numpy": "0.0.0",
+                "sympy": "0.0.0",
+                "matplotlib": "0.0.0",
+                "scipy": "0.0.0"
+            },
+            "ide-version": "TODO",
+            "setup": "/TODO",
+            "url-source": "https://github.com/TODO",
+            "variants": {}
+        }
+    },
+}

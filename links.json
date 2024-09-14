@@ -1,0 +1,33 @@
+{
+    "files":{
+        "../.gitignore": ".gitignore",
+        "../_config.yml": "_config.yml",
+        "../_template-blank.md": "_template-blank.md",
+        "../_template-external-url.md": "_template-external-url.md",
+        "../_template-placeholder.md": "_template-placeholder.md",
+        "../_template-template.md": "_template-template.md",
+        "../_template.md": "_template.md",
+        "../404-check.py": "404-check.py",
+        "../common.mk": "common.mk",
+        "../figures/0-standalone-other.sty": "figures/0-standalone-other.sty",
+        "../figures/0-standalone-tikz-fonts.sty": "figures/0-standalone-tikz-fonts.sty",
+        "../filter.lua": "filter.lua",
+        "../find_duplicate_hashes.py": "find_duplicate_hashes.py",
+        "../include.lua": "include.lua",
+        "../json-clean.py": "json-clean.py",
+        "../new-versioned-text.py": "new-versioned-text.py",
+        "../remaining-hash-lister.py": "remaining-hash-lister.py",
+        "../scripts/extract_chapter_section_hash_order.py": "scripts/extract_chapter_section_hash_order.py",
+        "../section-divs.lua": "section-divs.lua",
+        "../structure-common.py": "structure-common.py",
+        "../versions-inheriter.py": "versions-inheriter.py",
+        "../versions-lister.py": "versions-lister.py",
+        "../versions.json": "versions.json"
+    },
+    "directories":{
+        "../figures/0-standalone-tikz-template": "figures/0-standalone-tikz-template",
+        "../figures/0-standalone-tikz-template-electronic": "figures/0-standalone-tikz-template-electronic",
+        "../figures/0-standalone-tikz-template-pgfplots": "figures/0-standalone-tikz-template-pgfplots",
+        "../styles-tex": "styles-tex"
+    }
+}

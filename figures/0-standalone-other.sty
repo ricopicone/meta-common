@@ -1,0 +1,83 @@
+%% math macros
+
+\usepackage{../../styles-tex/bookmathmacros}
+
+%% colors
+\@ifpackageloaded{xcolor}{}{\usepackage{xcolor}}
+\usepackage{../../styles-tex/bookcolors}
+
+%% input search path
+
+\makeatletter
+\providecommand*{\input@path}{}
+\def\input@path{{../}{../../}}
+\makeatother
+
+%% minted
+
+\usepackage{xpatch}
+\RequirePackage[draft=false,newfloat]{minted}%
+\setminted{
+  autogobble,
+  fontsize=\small,
+  % frame=single,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray},
+  framesep=4pt,
+  tabsize=2,
+  escapeinside=``
+}
+\setminted[text]{
+  autogobble,
+  fontsize=\small,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray!50},
+  framesep=4pt,
+  xleftmargin=\parindent,
+  breaklines=true
+}
+% -- this makes the mintinlines match the current font size
+\makeatletter
+\newcommand{\currentfontsize}{\fontsize{\f@size}{\f@baselineskip}\selectfont}
+\makeatother
+\setmintedinline{fontsize=\currentfontsize}
+% -- define shortened inline macros
+\newmintinline[mc]{c}{}
+\newmintinline[ml]{latex}{}
+\newmintinline[mm]{matlab}{}
+\newmintinline[mpy]{python}{}
+\newmintinline[mb]{bash}{}
+% -- fix for bug in minted with spacing with colorbg, see https://tex.stackexchange.com/questions/228058/how-to-space-before-and-after-a-minted-code-block-with-bgcolor
+\makeatletter
+\patchcmd{\minted@colorbg}{\noindent}{\medskip\noindent}{}{}
+\apptocmd{\endminted@colorbg}{\par\medskip}{}{}
+\makeatother
+\newcommand{\mcwe}[1]{{\mc{#1}}}
+% -- get rid of red box around certain characters
+\makeatletter
+\AtBeginEnvironment{minted}{\dontdofcolorbox}
+\def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+\xpatchcmd{\inputminted}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{}
+\xpatchcmd{\mintinline}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{} % see https://tex.stackexchange.com/a/401250/
+\makeatother
+% -- suppress italics
+\RequirePackage{xpatch}
+\xpatchcmd{\mintinline}{\begingroup}{\begingroup\let\itshape\relax}{}{}
+\xpatchcmd{\minted}{\VerbatimEnvironment}{\VerbatimEnvironment\let\itshape\relax}{}{}
+
+%% Tikz and pgf
+
+\usepackage{../../styles-tex/booktikz}
+
+\pgfplotsset{
+  table/search path={./,../,../../},
+}
+
+%% Menukeys
+
+\usepackage{../../styles-tex/bookmenukeys}
+
+%% matplotlib fix
+\newcommand{\mathdefault}[1][]{}

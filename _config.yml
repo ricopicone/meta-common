@@ -1,0 +1,5 @@
+structure_whitelist:
+  - about.markdown
+  - .
+  - ext/*
+  - '**/README.md'

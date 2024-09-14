@@ -1,0 +1,28 @@
+\documentclass[varwidth=5in,dvipsnames,svgnames,convert=pdf2svg]{standalone}
+\ifstandalone
+  \usepackage{tikz}
+  \usepackage{../0-standalone-tikz-fonts}
+  \usepackage{../0-standalone-other}
+\fi
+\begin{document} % no blank lines after this!
+\begin{circuitikz}%
+  \draw[wire] (1,0) node[ground] {}%
+    to[short] ++(-1,0)%
+    to[vsource,l=$V_S$] ++(0,2) %
+    to[R=$R_S$,-o] ++(2,0) node[anchor=west] {DO pin}%
+    to[open] ++(0,-1)%
+    node[align=center] {\tikz{\draw[edge] (0,0) -- ++(1,0);}\\DO, low-Z}%
+    to[open,-o] ++(0,-1) node[anchor=west] {DGND pin}%
+    to[short] ++(-1,0);%
+  \draw[wire] (7,0) node[ground] {} %
+    to[short] ++(-1,0) %
+    node[anchor=east] {DGND pin}%
+    to[open,o-] ++(0,1)%
+    node[align=center] {\tikz{\draw[edge] (0,0) -- ++(1,0);}\\DI, high-Z}%
+    to[open,-o] ++(0,1)%
+    node[anchor=east] {DI pin}%
+    to[short] ++(2,0)%
+    to[R=$R_L$] ++(0,-2)%
+    to[short] ++(-1,0);%
+\end{circuitikz}%
+\end{document}%

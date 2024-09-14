@@ -1,0 +1,131 @@
+% Fonts
+
+\usepackage[final]{microtype} % nice microadjustments to fonts
+\usepackage{common-rtcbook/styles-tex/rtcbookfonts}
+
+% Math macros
+\usepackage{common-rtcbook/styles-tex/rtcbookmathmacros}
+
+% Cleverref
+
+\usepackage[noabbrev,capitalise,nameinlink]{cleveref}
+  \crefname{chapter}{Chapter}{Chapters}
+  \crefname{section}{Section}{Sections}
+  \crefname{subsection}{Section}{Sections}
+  \crefname{lab}{Lab Exercise}{Lab Exercises}
+  \crefname{resource}{Resource}{Resources}
+  \crefname{table}{Table}{Tables}
+  \crefname{appendix}{Appendix}{Appendices}
+  \crefname{subappendix}{Appendix}{Appendices}
+  \crefname{subsubappendix}{Appendix}{Appendices}
+  \crefname{subsubsubappendix}{Appendix}{Appendices}
+  \crefname{exturl}{url}{urls}
+  \crefname{problem}{Problem}{Problems}
+  \crefname{labproblem}{Lab Problem}{Lab Problems}
+  \crefformat{equation}{Equation~#2#1#3}
+  \crefrangeformat{equation}{Equations~#3#1#4 to~#5#2#6}
+  \crefmultiformat{equation}{Equations~#2#1#3}%
+    { and~#2#1#3}{, #2#1#3}{ and~#2#1#3}
+  \newif\ifinappendix% Default is \inappendixfalse
+  \let\oldappendix\appendix% Store \appendix
+  \renewcommand{\appendix}{% Update \appendix
+    \oldappendix% Default \appendix
+    \inappendixtrue% Set switch to true
+  }
+  \newcommand{\creflastconjunction}{, and\nobreakspace} % use Oxford comma
+
+% Color
+
+\usepackage{common-rtcbook/styles-tex/rtcbookcolors}
+
+% Tables
+
+\usepackage{tabularx} % adjustable-width tables
+\usepackage{multirow} % for tabulars
+\usepackage{longtable}
+\usepackage{makecell} % for \makecell{two\\lines}
+
+% Math
+
+\usepackage{bm}
+\usepackage{array}
+\usepackage{cancel}
+\newcommand*{\carry}[1][1]{\overset{#1}}
+\newcolumntype{B}[1]{r*{#1}{@{\,}l}}
+\newcommand{\emptybox}[1]{\framebox{\vphantom{.}\rule{#1}{0mm}}}
+\newcommand{\mybox}[1]{\framebox[7em][c]{\vphantom{|}#1}}
+
+% Tikz and pgf
+
+\usepackage{common-rtcbook/styles-tex/rtcbooktikz}
+
+% Menukeys
+
+\usepackage{common-rtcbook/styles-tex/rtcbookmenukeys}
+
+% Visible space
+
+\newcommand\Vtextvisiblespace[1][.3em]{%
+  \mbox{\kern.1em\vrule height.3ex}%
+  \vbox{\hrule width#1}%
+  \hbox{\vrule height.3ex}\kern.1em}
+\newcommand{\emp}{\Vtextvisiblespace}% For ease-of-use
+
+% Biblatex/Biber
+
+\RequirePackage{biblatex}
+\RequirePackage{babel,csquotes,xpatch} % recommended with biblatex
+\begin{filecontents}{biblatex-dm.cfg}
+\DeclareDatamodelFields[type=field,datatype=verbatim,nullok=true]{hash}
+\DeclareDatamodelEntryfields{hash}
+\DeclareFieldFormat[misc]{hash}{}%
+\end{filecontents}
+\DeclareFieldFormat{url}{%
+  \iffieldundef{hash}
+    {\url{#1}}
+    {\myurlinline{#1}{\thefield{hash}}}%
+}
+\DeclareFieldFormat{doi}{\url{https://doi.org/#1}}
+% \DeclareFieldFormat{url}{\my{#1}}
+% \DeclareFieldFormat{url}{\href{file:#1}{\textbf{Open file}}}
+% \iffieldundef{url}
+%   {}
+%   {\stripzeros{\thefield{urlday}}\adddot}%
+
+\AtEveryBibitem{%
+  \csappto{blx@bbx@\thefield{entrytype}}{% put at end of entry
+      \iffieldundef{annotation}{}{%
+      \nopagebreak\\[0.25\baselineskip]\nopagebreak%
+      \printfield{annotation}
+    }
+  }
+}
+
+% \DeclareSourcemap{ % remap the annote field to addedum for annotated bibliography
+%   \maps[datatype=bibtex]{
+%     \map{
+%       \step[fieldsource=annote, final]
+%       \step[fieldset=annotation, origfieldval, final]
+%       \step[fieldset=annote, null]
+%     }
+%   }
+% }
+\providetoggle{blx@lang@captions@english} % bug fix until biblatex v 3.15b released https://tex.stackexchange.com/questions/562068/cannot-use-polyglossia-babel-with-biblatex-in-luatex-etoolbox-toggle-undefined
+\usepackage{bibentry}
+
+% Geometry
+
+% \geometry{paper=a4paper}
+% \usepackage[size=a4]{beamerposter}
+
+% Format presentation size to A4
+\setlength{\paperwidth}{29.7cm}
+\setlength{\paperheight}{21.0cm}
+\setlength{\textwidth}{28.7cm}
+\setlength{\textheight}{20.0cm} 
+
+% Format presentation size to A4ish
+\setlength{\paperwidth}{562px}
+\setlength{\paperheight}{397px}
+\setlength{\textwidth}{524px}
+\setlength{\textheight}{359px} 

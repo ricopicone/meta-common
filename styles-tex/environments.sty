@@ -1,0 +1,3128 @@
+\ProvidesPackage{environments}
+
+% Time builds
+
+\RequirePackage{etoolbox}
+\RequirePackage{l3benchmark}
+\ExplSyntaxOn
+\AfterEndDocument { \benchmark_toc: }
+\use:n
+  {
+    \ExplSyntaxOff
+    \benchmark_tic:
+  }
+
+% Numbering
+
+\RequirePackage{amsmath}
+\usepackage{mathtools}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}} % for align* environment
+\numberwithin{equation}{chapter}
+\counterwithin*{footnote}{chapter}
+
+% \newcommand{\altfootnote}[1]{%
+% \let\oldthefootnote=\thefootnote%
+% \setcounter{footnote}{1}%
+% \renewcommand{\thefootnote}{\fnsymbol{footnote}}%
+% \footnote{#1}%
+% \let\thefootnote=\oldthefootnote%
+% }
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+% Quote
+
+\renewenvironment{quote}%
+  {\list{}{\leftmargin=0.3in\rightmargin=0.3in}\item[]\small}%
+  {\endlist}
+
+% Bibliography
+
+%% for origyear bibliography entries
+\renewbibmacro*{date}{%
+  \printdate
+  \iffieldundef{origyear}{%
+  }{%
+    \setunit*{\addspace}%
+    \printtext[parens]{orig.~\printorigdate}%
+  }%
+}
+
+%% for References instead of Bibliography
+
+% \renewcommand\bibname{References}
+
+% Background reading list
+
+\RequirePackage{etoolbox}
+
+\RequirePackage{enumitem}
+\newcommand{\bgreadinglist}[2][]{%
+\citereset%
+\begin{infobox}[Background reading]
+\begin{itemize}[align=parleft,left=0pt..1em]
+  \def\nextitem{\def\nextitem{#1}}% Separator
+  \renewcommand*{\do}[1]{\nextitem \item ##1}% How to process each item
+  % \renewcommand*{\do}[1]{\nextitem \item \fullcite{##1}} % was
+  \docsvlist{#2}% Process list
+\end{itemize}
+\end{infobox}
+}
+
+% Further reading list
+
+\RequirePackage{etoolbox}
+
+\RequirePackage{enumitem}
+\newcommand{\freadinglist}[2][]{%
+\citereset%
+\begin{infobox}[label=#1]{Further Reading}%
+\unskip%
+\begin{itemize}[align=parleft,left=0pt..1em]%
+\unskip%
+\renewcommand*{\do}[1]{\item ##1}% How to process each item
+% \renewcommand*{\do}[1]{\nextitem \item \fullcite{##1}} % was
+\docsvlist{#2}% Process list
+\end{itemize}
+\end{infobox}
+}
+
+% Marginpar and marginnote styling
+
+\let\oldmarginpar\marginpar
+\makeatletter
+\RenewDocumentCommand{\marginpar}{O{#2} m}{% ragged
+	\oldmarginpar[\raggedright #1]{\raggedright #2}
+}
+\makeatother
+
+\let\oldmarginnote\marginnote
+\makeatletter
+\RenewDocumentCommand{\marginnote}{O{#2} m}{% ragged
+	\oldmarginnote[\raggedright #1]{\raggedright #2}
+}
+\makeatother
+
+% URL and QR
+
+\RequirePackage{url}
+\makeatletter
+\def\Url@slashortwo{\mathchar`\/\@ifnextchar/{\kern-.3em}{\kern-.1em}}
+\def\Url@colonslash{\mathchar`\:\@ifnextchar/{\kern-.1em}{}}
+\def\Url@mslasher{\mathchar`\m\@ifnextchar/{\kern-.1em}{}}
+\def\Url@gslasher{\mathchar`\g\@ifnextchar/{\kern-.05em}{}}
+\g@addto@macro\UrlSpecials{\do\/{\Url@slashortwo}}
+\g@addto@macro\UrlSpecials{\do\:{\Url@colonslash}}
+\g@addto@macro\UrlSpecials{\do\m{\Url@mslasher}}
+\g@addto@macro\UrlSpecials{\do\g{\Url@gslasher}}
+\makeatother
+
+% \crefname{exturl}{url}{urls}
+\RequirePackage[\draftorfinal]{qrcode}
+\newlength{\qrheight}
+\setlength{\qrheight}{1.0cm}
+\qrset{link, height=1\qrheight}
+\makeatletter
+\NewDocumentCommand{\myurl}{%
+  s   % starred version that doesn't \idit
+  O{} % punctuation at end of url
+  O{} % safe/empty
+  m   % url
+  m   % hash
+}{%
+  % \\ %
+  % \def\leftref{%
+  %   \href{\urladd{\bookurl}{#5}}{%
+  %     \adjustbox{valign=t}{%
+  %       \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#5}}%
+  %       \hspace{2pt}%
+  %       \begin{minipage}[c][\qrheight]{2em}\noindent
+  %       \hashstyle{\faLink\\#5}
+  %       \vfill
+  %       \phantom{.}
+  %       \end{minipage}%
+  %     }%
+  %   }%
+  % }%
+  % \def\rightref{%
+  %   \hfill
+  %   \href{\urladd{\bookurl}{#5}}{%
+  %     \adjustbox{valign=t}{%
+  %       \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+  %       \raggedleft\hashstyle{\faLink\\#5}
+  %       \vfill
+  %       \phantom{.}
+  %       \end{minipage}%
+  %       \hspace{2pt}%
+  %       \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#5}}%
+  %     }%
+  %   }%
+  % }%
+  % \IfEqCase{#3}{%
+  %   {safe}{%
+  %     \marginnote[%
+  %       \leftref %
+  %     ]{%
+  %       \rightref %
+  %     }%
+  %   }%
+  %   {}{%
+  %     \marginpar[%
+  %       \leftref %
+  %     ]{%
+  %       \rightref %
+  %     }%
+  %   }%
+  % }%
+  % \unskip\centerline{\href{\urladd{\bookurl}{#5}}{\urladd{\bookurldisplay}{#5}}#2}\noindent
+  \unskip%
+  \qrunline{#5}{}%
+  \unskip\noindent\makebox[\linewidth]{\url{\urladd{\bookurl}{#5}}#2}% using url instead of href so we can get the nice kerning on the //
+  \noindent %
+  \IfBooleanTF{#1}{%star
+  }{% no star
+    \idit[exturl][][#4]{external-urls/#5}{#5}\noindent
+  }%
+  \unskip%
+}
+\makeatother
+
+
+\makeatletter
+\NewDocumentCommand{\myurlbottom}{%
+  s   % starred version that doesn't \idit
+  O{} % punctuation at end of url
+  O{} % safe/empty
+  m   % url
+  m   % hash
+}{%
+  \\ %
+  \unskip\noindent\makebox[\linewidth]{\url{\urladd{\bookurl}{#5}}#2}%
+  \qrunlinebottom{#5}{}%
+  \noindent % using url instead of href so we can get the nice kerning on the //
+  \IfBooleanTF{#1}{%star
+  }{% no star
+    \idit[exturl][][#4]{external-urls/#5}{#5}\noindent
+  }%
+}
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\myurlinline}{%
+  s   % starred version doesn't \idit
+  m   % url
+  m   % hash
+}{%
+% \href{\urladd{\bookurl}{#3}}{\urladd{\bookurldisplay}{#3}}\ignorespaces% using url instead of href so we can get the nice kerning on the //
+\url{\urladd{\bookurl}{#3}}\ignorespaces%
+\IfBooleanTF{#1}{%star
+}{% no star
+\idit[exturl][][#2]{external-urls/#3}{#3}\unskip\ignorespaces%
+}%
+}
+\makeatother
+
+% \newcommand{\myurlinline}[1]{%
+% 	\href{#1}{\small\ttfamily\path{#1}}%
+% }
+
+
+% \newcommand{\myurlsafe}[3][.]{%
+%   \\ %\marginnote[\qrcode{#2}]{\raggedleft \qrcode{#2}}
+%   \marginnote[%
+%     \href{\urladd{\bookurl}{#3}}{%
+%       \adjustbox{valign=t}{%
+%         \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#3}}%
+%         \hspace{2pt}%
+%         \begin{minipage}[c][\qrheight]{2em}\noindent
+%         \hashstyle{\faLink\\#3}
+%         \vfill
+%         \phantom{.}
+%         \end{minipage}%
+%       }%
+%     }%
+%   ]{%
+%     \hfill
+%     \href{\urladd{\bookurl}{#3}}{%
+%       \adjustbox{valign=t}{%
+%         \begin{minipage}[c][\qrheight]{2em}\noindent
+%         \raggedleft\hashstyle{\faLink\\#3}
+%         \vfill
+%         \phantom{.}
+%         \end{minipage}%
+%         \hspace{2pt}%
+%         \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#3}}%
+%       }%
+%     }%
+%   }%
+%   \centerline{\href{\urladd{\bookurl}{#3}}{\small\texttt{\urladd{\bookurl}{#3}}}#1}
+%   \idit[exturl][][#2]{external-urls/#3}{#3}
+% }
+
+% Algorithms
+
+\RequirePackage{algorithm}
+\RequirePackage[%
+  italicComments=false,%
+  rightComments=true,%
+  commentColor=light-gray,%
+  % beginComment=%
+]{algpseudocodex}
+\tikzset{algpxIndentLine/.style={draw,line width=.5pt,gray,line join=round,line cap=round,rounded corners=3pt}}
+%% \def\Vhrulefill{\leavevmode\leaders\hrule height 0.7ex depth \dimexpr0.4pt-0.7ex\hfill\kern0pt}
+% \RequirePackage{xhfill}
+% \algrenewcomment[2][.5\linewidth]{%
+% \quad\xrfill[.5ex]{.5pt}[gray]\makebox[#1][l]{\color{gray}#2} % kinda worked but linespread got messed up
+% }%
+\let\oldComment\Comment
+\renewcommand{\Comment}[2][.5\linewidth]{\oldComment{#2}}
+\let\oldState\State
+\usepackage{mfirstuc}%
+% \MFUblocker{\NoCaseChange}%
+\MFUexcl{\textbf}
+\renewcommand{\State}[1]{\oldState{\makefirstuc{#1}}} % this caused problems with arguments that start with commands or math ... going to try to manually capitalize the first letter instead
+
+\newenvironment{algorithmcenter}
+ {\setlength{\textfloatsep}{0pt}\setlength{\intextsep}{0pt}\parskip=0pt\par\vspace{.5\baselineskip}\centering}
+ {\par\vspace{.5\baselineskip}}
+
+% Code listings
+
+\IfEq{\draftorfinal}{draft}{%
+  \RequirePackage[draft=true,newfloat]{minted}%
+}{% final
+  \RequirePackage[draft=false,newfloat]{minted}%
+}
+\setminted{
+  autogobble,
+  fontsize=\small,
+  % frame=single,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray},
+  framesep=4pt,
+  tabsize=2,
+  escapeinside=``,
+  mathescape,
+}
+\setminted[text]{
+  autogobble,
+  fontsize=\small,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray!50},
+  framesep=4pt,
+  xleftmargin=\parindent,
+  breaklines=true
+}
+% -- fixing C highlighting of "thread" as a keyword (not an actual keyword) ... couldn't get to work
+% \AtBeginEnvironment{minted}{%
+%   \let\originalPYGdefault\PYGdefault
+%   \renewcommand{\PYGdefault}[2]{%
+%     % \ifstrequal{#1}{k}%
+%      \ifstrequal{#2}{thread}%
+%        {\originalPYGdefault{n}{#2}}%
+%        {\originalPYGdefault{#1}{#2}}%
+%   }%
+% }
+% -- this makes the mintinlines match the current font size
+\makeatletter
+\newcommand{\currentfontsize}{\fontsize{\f@size}{\f@baselineskip}\selectfont}
+\makeatother
+\setmintedinline{fontsize=\currentfontsize}
+% -- define shortened inline macros
+\newmintinline[mc]{c}{}
+\newmintinline[ml]{latex}{}
+\newmintinline[mm]{matlab}{}
+\newmintinline[mpy]{python}{}
+\newmintinline[mb]{bash}{}
+% -- fix for bug in minted with spacing with colorbg, see https://tex.stackexchange.com/questions/228058/how-to-space-before-and-after-a-minted-code-block-with-bgcolor
+\makeatletter
+\patchcmd{\minted@colorbg}{\noindent}{\medskip\noindent}{}{}
+\apptocmd{\endminted@colorbg}{\par\medskip}{}{}
+\makeatother
+\newcommand{\mcwe}[1]{{\mc{#1}}}
+% -- get rid of red box around certain characters
+\makeatletter
+\AtBeginEnvironment{minted}{\dontdofcolorbox}
+\def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+\xpatchcmd{\inputminted}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{}
+\xpatchcmd{\mintinline}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{} % see https://tex.stackexchange.com/a/401250/
+\makeatother
+% -- listings
+% \newenvironment{codelisting}{\captionsetup{type=listing}}{}
+% \SetupFloatingEnvironment{listing}{name=Listing,placement=tbhp}
+\AtBeginDocument{\counterwithin{listing}{chapter}}
+\RequirePackage[skins,breakable,many,minted]{tcolorbox}
+\newcommand{\mynewminted}[3]{%
+  \newminted[#1]{#2}{#3}%
+  \tcbset{myminted/#1/.style={minted language=#2,minted options={#3}}}}
+\mynewminted{clisting}{c}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\mynewminted{clistinglong}{c}{% no samepage
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  frame=none
+}
+\mynewminted{clistingtexcomments}{c}{% with texcomments
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  texcomments,
+  samepage,
+  frame=none
+}
+\mynewminted{clistinglongtexcomments}{c}{% no samepage and with texcomments
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  texcomments,
+  frame=none
+}
+\mynewminted{clistinglinenos}{c}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none,
+  linenos=true
+}
+\mynewminted{clistinglonglinenos}{c}{% no samepage
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  frame=none,
+  linenos=true
+}
+\mynewminted{armlisting}{ARM}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\mynewminted{textlisting}{text}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\let\myitshape\itshape % for italics in listing headers even when we \let\itshape\relax below
+\newtcblisting[
+  use counter*=listing,
+  % number within=chapter,
+  list inside=mypyg,
+  crefname={listing}{listings},
+  Crefname={Listing}{Listings}]%
+  {listingsbox}[4][]{%
+  listing only,
+  boxxstyle,
+  fonttitle=\small,
+  title={{Listing \thetcbcounter} #3},
+  list entry={\protect\numberline{\thetcbcounter}#3},
+  myminted/#2,
+  #1,
+  label=#4,
+  nofloat}
+\newtcblisting[
+  use counter from=listingsbox,
+  list inside=mypyg,
+  crefname={listing}{listings},
+  Crefname={Listing}{Listings}]%
+  {listingsboxfloat}[5][]{%
+  listing only,
+  boxxstyle,
+  fonttitle=\small,
+  title={{Listing \thetcbcounter} #3},
+  list entry={\protect\numberline{\thetcbcounter}#3},
+  myminted/#2,
+  #1,
+  label=#4,
+  floatplacement=h,
+  float=#5}
+% -- suppress italics
+\AtBeginEnvironment{listingsbox}{\let\itshape\relax}
+\AtBeginEnvironment{listingsboxfloat}{\let\itshape\relax}
+\AtBeginEnvironment{minted}{\let\itshape\relax}
+% \AtBeginEnvironment{mintinline}{\let\itshape\relax} % doesn't seem to work
+\newcommand{\llabel}[1]{\label[line]{#1}\hypertarget{#1}{}}
+\newcommand{\lref}[1]{\hyperlink{#1}{\FancyVerbLineautorefname~\ref*{#1}}}
+\RequirePackage{xpatch}
+\xpatchcmd{\mintinline}{\begingroup}{\begingroup\let\itshape\relax}{}{}
+
+% Exercises
+
+\let\exercise\relax % because NewMath_MIT.cls defines
+\let\endexercise\relax
+\let\solution\relax % because NewMath_MIT.cls defines
+\let\endsolution\relax
+
+\RequirePackage[use-files]{xsim} % replaces exsheets
+\crefname{exercise}{problem}{problems}
+\Crefname{exercise}{Problem}{Problems}
+\crefname{labexercise}{problem}{problems}
+\Crefname{labexercise}{Problem}{Problems}
+% \creflabelformat{labexercise}{#2L#1#3}
+% this is so we can insert with ID instead of id
+\newcommand*\insertexercise[1]{%
+\XSIMexpandcode{\printexercise{exercise}{\GetExerciseIdForProperty{ID}{#1}}}%
+}
+\DeclareExerciseProperty{hash}
+% \xsimsetup{} # TODO
+
+\RequirePackage{multicol}
+\setlength{\columnsep}{3ex}
+\RequirePackage{wrapfig} % for floats in multicols
+\let\exercises\relax % because NewMath_MIT.cls defines
+\let\endexercises\relax
+\newenvironment{exercises}[1]{%
+  \def\thisshorttitle{Problems}%
+  \def\thisisa{sec}%
+  \def\thissecversioned{}%
+  \lecture[\thisshorttitle]{#1}{problems}% Beamer
+  \defsecurlandslug{problems}% securl+secslug
+  % \vspace{1\baselineskip}
+  \newpage
+  \noindent
+  \begin{tikzpicture}
+    \draw[line width=1pt,c1,line cap=round] (0,0) -- (\linewidth-\pgflinewidth,0);
+  \end{tikzpicture}
+  \nobreak
+  \vspace{-1.95\baselineskip}
+  \nobreak
+  \oldsection{Problems %
+  }%
+  \phantom{.}%
+  \qrinlineproblems{#1}{}%
+  \phantom{.}
+  % \oldsection*{Problems}%
+  % \addcontentsline{toc}{section}{\protect\hphantom{\numberline{\thesection}}Problems}%
+  \idit[section][Problems][][][]{\secslug}{#1}%
+  % \begin{multicols}{2} % These cols were too small for problems with code
+}{%
+%\end{multicols}
+}%
+\newenvironment{solutions}[1]{%
+  \def\thisshorttitle{Problem Solutions}%
+  \def\thisisa{sec}%
+  \def\thissecversioned{}%
+  \lecture[\thisshorttitle]{#1}{problems}% Beamer
+  \defsecurlandslug{solutions}% securl+secslug
+  % \vspace{1\baselineskip}
+  % \newpage
+  \noindent
+  \begin{tikzpicture}
+    \draw[line width=1pt,c1,line cap=round] (0,0) -- (\linewidth-\pgflinewidth,0);
+  \end{tikzpicture}
+  \nobreak
+  \vspace{-1.95\baselineskip}
+  \nobreak
+  \oldsection*{Problem Solutions %
+  }%
+  \phantom{.}%
+  \qrinlineproblems{#1}{}%
+  \phantom{.}
+  % \oldsection*{Problems}%
+  \addcontentsline{toc}{section}{\protect\hphantom{\numberline{\thesection}}Problem Solutions}%
+  \ifdefined\issolution \else %
+  \idit[section][Solutions][][][]{\secslug}{#1}%
+  \fi %
+}{}%
+\newenvironment{labsolutions}[1]{%
+  \clearpage%
+  \def\thisshorttitle{Lab \thechapter\ Solutions}%
+  \def\thisisa{sec}%
+  \def\thissecversioned{}%
+  \lecture[\thisshorttitle]{#1}{problems}% Beamer
+  \defsecurlandslug{solutions}% securl+secslug
+  % \vspace{1\baselineskip}
+  % \newpage
+  \noindent
+  \begin{tikzpicture}
+    \draw[line width=1pt,c1,line cap=round] (0,0) -- (\linewidth-\pgflinewidth,0);
+  \end{tikzpicture}
+  \nobreak
+  \vspace{-1.95\baselineskip}
+  \nobreak
+  \oldsection*{Lab \thechapter\ Solutions %
+  }%
+  \phantom{.}%
+  \qrinlineproblems{#1}{}%
+  \phantom{.}
+  % \oldsection*{Problems}%
+  \addcontentsline{toc}{section}{\protect\hphantom{\numberline{\thesection}}Lab Problem Solutions}%
+  \ifdefined\issolution \else %
+  \idit[section][Solutions][][][]{\secslug}{#1}%
+  \fi %
+}{}%
+
+\DeclareExerciseEnvironmentTemplate{mydefault}{%
+	\GetExerciseHeadingF{\GetExerciseProperty{ID}}{%
+	  \protect\XSIMmixedcase{\protect\GetExerciseName}\protect\nobreakspace
+	  \protect\theexercise
+	  \protect\IfInsideSolutionF{}%
+	}
+	% \GetExercisePropertyT{points}{%
+	%   \marginpar{%
+  %     \IfInsideSolutionF{\rule{1.2cm}{1pt}\slash}%
+  %     \printgoal{\PropertyValue}
+  %     \GetExercisePropertyT{bonus-points}{~(+\printgoal{\PropertyValue})}%
+  %     ~\XSIMtranslate {point-abbr}%
+  %   }%
+  % }%
+}{\par}
+
+\ExplSyntaxOn
+
+\DeclareExerciseEnvironmentTemplate {wu}
+  {%
+    \IfInsideSolutionTF{\FloatBarrier}{}%
+    \setlist[enumerate,1]{label = \alph*.}%
+    \setlist[enumerate,2]{label=\roman*.}%
+    \setlist[enumerate]{wide, labelwidth=\parindent, labelsep=1ex, leftmargin=2\parindent, rightmargin=\parindent, itemindent=0pt, listparindent=\parindent}%
+    \subsubsection*
+      {%
+        % \noindent\marginboxref{\GetExerciseProperty{hash}}{}%
+        \noindent\XSIMmixedcase { \GetExerciseName } \nobreakspace
+        \GetExerciseProperty {counter} \nobreakspace
+        \href{\bookurl/\GetExerciseProperty{hash}}{\normalfont\small\color{gray}\ttfamily\reflectbox{\faLink}\MakeUppercase{\GetExerciseProperty{hash}}}
+      }%
+    \ifdefined\issolution \else % not solutions manual
+      \idit[problem][Problem-\GetExerciseProperty{counter}][][][]{\secslug}{\GetExerciseProperty{hash}} % had to use a   (non breaking space) character for some reason
+    \fi %
+    % \GetExercisePropertyT {points}
+    %   {
+    %     \marginpar
+    %       {
+    %         \IfInsideSolutionF { \rule {1.2cm} {1pt} \slash }
+    %         \printgoal {\PropertyValue}
+    %         \GetExercisePropertyT {bonus-points}
+    %           { \nobreakspace ( + \printgoal {\PropertyValue} ) }
+    %         \nobreakspace\XSIMtranslate {point-abbr}
+    %       }
+    %   }
+
+  }
+  {\IfInsideSolutionTF{\par\addvspace{\medskipamount}}{\par\addvspace{\medskipamount}}}
+  % {\IfInsideSolutionTF{\clearpage}{\par\addvspace{\medskipamount}}}
+
+\DeclareExerciseEnvironmentTemplate {wulab} % couldn't find a more elegant solution than to duplicate because \idit needed to be different and I can't seem to be able to test for which *type* of exercise it is
+  {%
+    \IfInsideSolutionTF{\FloatBarrier}{}%
+    \setlist[enumerate,1]{label = \alph*.}%
+    \setlist[enumerate,2]{label=\roman*.}%
+    \setlist[enumerate,1]{labelindent=0pt}%
+    \setlist[enumerate]{wide, labelwidth=!, leftmargin=*}%
+    \subsubsection*
+      {%
+        % \noindent\marginboxref{\GetExerciseProperty{hash}}{}%
+        \noindent\XSIMmixedcase { \GetExerciseName } \nobreakspace
+        \GetExerciseProperty {counter} \nobreakspace
+        \href{\bookurl/\GetExerciseProperty{hash}}{\normalfont\small\color{gray}\ttfamily\reflectbox{\faLink}\MakeUppercase{\GetExerciseProperty{hash}}}
+      }%
+    \ifdefined\issolution \else % not solutions manual
+      \idit[labproblem][Problem-\GetExerciseProperty{counter}][][][]{\secslug}{\GetExerciseProperty{hash}} % had to use a   (non breaking space) character for some reason
+    \fi
+    % \GetExercisePropertyT {points}
+    %   {
+    %     \marginpar
+    %       {
+    %         \IfInsideSolutionF { \rule {1.2cm} {1pt} \slash }
+    %         \printgoal {\PropertyValue}
+    %         \GetExercisePropertyT {bonus-points}
+    %           { \nobreakspace ( + \printgoal {\PropertyValue} ) }
+    %         \nobreakspace\XSIMtranslate {point-abbr}
+    %       }
+    %   }
+
+  }
+  {\IfInsideSolutionTF{\par\addvspace{\medskipamount}}{\par\addvspace{\medskipamount}}}
+  % {\IfInsideSolutionTF{\clearpage}{\par\addvspace{\medskipamount}}}
+
+\ExplSyntaxOff
+
+\xsimsetup{exercise/template=wu}
+
+\xsimsetup{
+	exercise/within = chapter ,
+  % exercise/counter = {problem} ,
+	% exercise/the-counter = \ifdefined\chapteracr \chapteracr\fi.\GetExerciseProperty{ID} ,
+  exercise/template = wu ,
+  solution/template = wu ,
+	% exercise/heading = \subsection{\GetExerciseProperty{ID}}{\GetExerciseProperty{hash}}{Exercise \theexercise},
+	% exercise/heading = \marginboxref{\GetExerciseProperty{hash}}{} \subsubsection*,
+  exercise/name = Problem ,
+	path = {exercises},
+  % exercise/post-hook = {$\square$},
+	% exercise/pre-hook = {\addcontentsline{toc}{subsection}{Exe.\ \theexercise}},
+  % exercise/begin-hook = \setlist[enumerate,1]{label = \alph*.}\setlist[enumerate,2]{label=\roman*.},
+  % solution/begin-hook = \setlist[enumerate,1]{label = \alph*.},
+}
+
+%% Laboratory problems
+
+\newcounter{labexercise}[chapter]
+\DeclareExerciseType{lab}{%
+    exercise-env         = labexercise ,
+    solution-env         = labsolution ,
+    exercise-name        = Problem ,
+    solution-name        = Solution ,
+    exercise-template    = wulab ,
+    solution-template    = wulab ,
+    the-counter          = L\thechapter.\arabic{labexercise},
+}
+
+% Boxes, general
+
+%% Prevent boxes from breaking with just a little at the end of a page
+% usage \nobottom{%
+% \begin{mybox}
+%     Sample text.
+% \end{mybox}}
+\newsavebox{\mybottombox} % Box to save the text of the command
+\newlength{\mybottomlength} % The length of our text inside the command
+\newlength{\availafter} % The available length left on the page after placing our text
+% Optional argument is the minimum length after the nobottom text for not pagebreak. Change it to your needs
+\newcommand{\nobottom}[2][60pt]{\savebox{\mybottombox}{\vbox{#2}}\setlength{\mybottomlength}{\ht\mybottombox}%
+\setlength{\availafter}{\dimexpr\textheight-\mybottomlength-\pagetotal\relax}\ifdim\availafter<#1%
+\pagebreak\noindent\usebox{\mybottombox}%
+\else%
+\noindent\usebox{\mybottombox}%
+\fi%
+}%
+
+% Attention Info Box
+
+\RequirePackage{tikz}
+\RequirePackage[skins,breakable,many,minted]{tcolorbox}
+	\tcbset{colback=white}
+	\tcbuselibrary{minted}
+	\tcbuselibrary{theorems}
+\RequirePackage[framemethod=TikZ]{mdframed}
+	\mdfsetup{%
+		innertopmargin=0\baselineskip,
+		innerbottommargin=1\baselineskip
+	}
+
+\newtcolorbox[auto counter,number within=chapter]{infobox}[2][]{
+  boxxstyle,
+  title={Box \thetcbcounter\quad #2},
+  after app={\suppressfloats[t]},
+  #1
+}
+
+% \newcounter{infobox}[chapter]
+% \renewcommand{\theinfobox}{\thechapter.\arabic{infobox}}
+% \newenvironment{infobox}[1][]{%
+% 	\stepcounter{infobox}%
+% 	\begin{tcolorbox}[boxxstyle,title={Box \theinfobox\quad #1}]%
+%   \unskip%
+% }{%
+%   \end{tcolorbox}
+%   \suppressfloats[t]
+% }
+
+% \newcommand{\thereadingbox}{\thechapter.\arabic{infobox}}
+\newenvironment{readingbox}[1][]{%
+  % \stepcounter{infobox}%
+  \begin{infobox}[unbreakable]{#1}%
+  \unskip%
+}{%
+  \end{infobox}
+}
+
+% Examples
+
+\RequirePackage{ifthen}
+\newboolean{show}
+\ifdefined\ispartial
+  \setboolean{show}{false}
+\else
+  \setboolean{show}{true}
+\fi
+
+% \newcounter{myexample}
+% \renewcommand{\themyexample}{\thesection-\arabic{myexample}}
+% \ifthenelse{\boolean{show}}{
+% 	\newenvironment{myexample}[1][]{%
+% 		\stepcounter{myexample}
+% 		\begin{tcolorbox}[examplestyle,
+%       title={Example \themyexample %
+%         \ifthenelse{\isempty{#1}}{}{% if not blank there's a title
+%           \marginnote{{\bfseries\color{c1}re: #1}}%
+%         }%
+%       },
+%     ]%
+% 	}{%
+% 	    \end{tcolorbox}
+% 	}
+% }{
+% 	\newenvironment{myexample}[1][]{%
+% 		\stepcounter{myexample}
+% 		\begin{tcolorbox}[%
+%       examplestyle,
+%       title={Example \themyexample %
+%         \ifthenelse{\isempty{#1}}{}{% if not blank there's a title
+%           \marginnote{{\bfseries\color{c1}re: #1}}%
+%         }%
+%       },
+% 			lowerbox=invisible,
+%       		every float=\centering
+% 			]%
+% 	}{%
+% 	    \end{tcolorbox}
+% 	}
+% }
+
+% \newcounter{myexample}
+% \numberwithin{myexample}{chapter}
+
+\newenvironment{myexamplealways}[1][]{%
+	\stepcounter{example}
+	\begin{tcolorbox}[%
+    examplestyle,
+    title={Example \theexample %
+      \ifthenelse{\isempty{#1}}{}{% if not blank there's a title
+        \marginnote{{\bfseries\color{c1}re: #1}}%
+      }%
+    },
+		lowerbox=visible,
+    after={\suppressfloats[t]},
+    after lower={\suppressfloats[t]}
+		]%
+	}{%
+    \end{tcolorbox}
+    % \suppressfloats[t]
+	}
+
+\newcommand{\mayb}[1]{%
+\ifthenelse{\boolean{show}}{#1}{\phantom{#1}}%
+}%
+
+\newcommand{\examplemaybe}[4]{
+	\begin{myexample}[#1] \label{#4}
+		#2
+		\tcblower
+		#3
+	\end{myexample}
+}%
+
+\newcommand{\examplealways}[4]{
+  \begin{myexamplealways}[#1] \label{#4}
+    #2
+    \tcblower
+    #3
+  \end{myexamplealways}
+}%
+
+% Hidden stuff
+
+\RequirePackage[framemethod=TikZ]{mdframed}
+	\mdfsetup{%
+		innertopmargin=0\baselineskip,
+		innerbottommargin=1\baselineskip
+	}
+
+\newenvironment{eqbox}[1][]{%
+	\stepcounter{equation}
+	\begin{tcolorbox}[fonttitle=\bfseries,breakable,title={Equation \theequation\quad #1},colframe=mydarkgrey,colback=white]%
+}{%
+  \end{tcolorbox}
+  \suppressfloats[t]
+}
+\newenvironment{eqboxi}[2][]{%
+	\stepcounter{equation}
+	\begin{tcolorbox}[fonttitle=\bfseries,breakable,title={Equation \theequation\quad #1},colframe=mydarkgrey,upperbox=invisible,colback=white,label=#2]%
+}{%
+  \end{tcolorbox}
+  \suppressfloats[t]
+}
+\newenvironment{eqboxtwo}[1][]{%
+	\begin{tcolorbox}[fonttitle=\bfseries,breakable,notitle,colframe=c2,colback=white]%
+}{%
+    \end{tcolorbox}
+}
+
+\newcommand{\maybe}[1]{
+	\ifthenelse{\boolean{show}}{
+		\begin{tcolorbox}[breakable,colframe=white,colback=white,notitle] #1 \end{tcolorbox}}{
+		\begin{tcolorbox}[breakable,colframe=white,upperbox=invisible,colback=white,notitle] #1 \end{tcolorbox}
+	}%
+}%
+\newcommand{\mayben}[3]{
+	\ifthenelse{\boolean{show}}{
+		\begin{infobox}[#1] \label{#2} #3 \end{infobox}}{
+		\begin{infoboxi}[#1] \label{#2} #3 \end{infoboxi}
+	}%
+}%
+\newcommand{\maybeeq}[1]{
+	\ifthenelse{\boolean{show}}{
+		\begin{eqboxtwo} {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}#1} \end{eqboxtwo}}{
+		\begin{eqboxtwoi} {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}#1} \end{eqboxtwoi}
+	}%
+}%
+\newcommand{\maybeeqn}[3]{
+	\ifthenelse{\boolean{show}}{
+		\begin{eqbox}[#1] \label{#2} {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}#3} \end{eqbox}}{
+		\begin{eqboxi}[#1]{#2} {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}#3} \end{eqboxi}
+	}%
+}%
+
+% Theorems
+
+% for dotted frame lines
+\makeatletter
+\tikzset{
+    dot diameter/.store in=\dot@diameter,
+    dot diameter=3pt,
+    dot spacing/.store in=\dot@spacing,
+    dot spacing=10pt,
+    dots/.style={
+        line width=\dot@diameter,
+        line cap=round,
+        dash pattern=on 0pt off \dot@spacing
+    }
+}
+\makeatother
+
+\tikzset{
+  boxlines/.style={
+    line width=1pt,line cap=round,rounded corners=1pt
+  },
+  mydots/.style={
+    dot diameter=1pt, dot spacing=6pt, dots
+  }
+}
+\def\boxlinesoff{.75pt}
+\def\boxlinesofftwo{1.75pt}
+\def\boxlinesoffthree{2pt}
+
+\let\svpar\par
+\edef\svparskip{\the\parskip}
+\def\revertpar{\svpar\setlength\parskip{\svparskip}\let\par\svpar}
+\def\noparskip{\leavevmode\setlength\parskip{0pt}%
+  \def\par{\svpar\let\par\revertpar}}
+
+\tcbset{
+  defstyle/.style={%
+    fonttitle=\bfseries,
+    %fontupper=\slshape,
+    arc=0mm,
+    colback=blue!5!white,colframe=blue!75!black},
+  boxstyle/.style={%
+    empty,% Empty previously set parameters
+    % Attaching a box requires an overlay
+    attach boxed title to top left,
+    % Ensures proper line breaking in longer titles
+    minipage boxed title,
+    % (boxed title style requires an overlay)
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=0pt,bottom=2pt,overlay={}},
+    coltitle=c1,
+    fonttitle=\bfseries,
+    % before=\par\medskip\noindent,
+    parbox=false, % should allow for paragraphs but doesn't seem to work
+    % before upper=\setlength{\parskip}{1\baselineskip},
+    before upper={\setlength{\parindent}{0pt}\parindent0em\unskip\noindent},
+    boxsep=0pt,
+    left=4.5pt,
+    right=4.5pt,
+    top=4.5pt,
+    breakable,
+    pad at break=0mm,
+    before skip=7pt, after skip=7pt,
+  },
+  examplestyle/.style={%
+    boxstyle,
+    fonttitle=\bfseries\linespread{.7},
+    title={Example \theexample},
+    % before lower=\marginnote{{\color{c1}\sffamily\bfseries Problem Solution}},
+    % before upper={\marginnote{{\color{c2}\sffamily\bfseries Problem Statement}}[1\baselineskip] \csname @totalleftmargin\endcsname0pt \noparskip}, % Use instead of parbox=true. This ensures parskip is inherited by box.
+    % Handles box when it exists on one page only
+    overlay unbroken={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east);
+      % highlight above tcblower
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      },
+    % Handles multipage box: first page
+    overlay first={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      % Handles tcblower state (tricky!)
+      \ifcase\tcbsegmentstate%
+        % 0 = Box contains only an upper part
+        \coordinate (c1) at ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          (c1);
+        % \draw[c2,boxlines,mydots]
+        %   (c1) --
+        %   (c1 |- frame.south west);
+        \coordinate (c2) at ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          (c2);
+      \or%
+        % 1 = Box contains an upper and a lower part
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      \else%
+        % 2 = Box contains only a lower part
+        % can't happen here
+      \fi%
+      },
+    % Handles multipage box: middle page
+    overlay middle={%%
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % Handles tcblower state (tricky!)
+      \ifnumequal{\tcbsegmentstate}{0}{%
+        % 0 = Box contains only an upper part
+        \coordinate (c0) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \coordinate (c1) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) -- (c1);
+        \draw[c2,boxlines]
+          (c1) -- (c1 |- frame.south west);
+        \coordinate (c3) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \coordinate (c4) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+      }{\ifnumequal{\tcbsegmentstate}{1}{%
+        % 1 = Box contains an upper and a lower part
+        \coordinate (c0) at ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \coordinate (c1) at ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \draw[c2,boxlines]
+          (c1) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      }{\ifnumequal{\tcbsegmentstate}{2}{%
+        % 2 = Box contains only a lower part
+        % can't happen here
+      }}}%
+    },
+    % Handles multipage box: last page
+    overlay last={%
+      % \draw[c1,line width=3pt,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east); },%
+  },
+  boxxstyle/.style={
+    boxstyle,
+    fonttitle=\linespread{.7},
+    % title={Example \themyexample},
+    % Handles box when it exists on one page only
+    overlay unbroken={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east);
+      },
+    % Handles multipage box: first page
+    overlay first={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      },
+    % Handles multipage box: middle page
+    overlay middle={%%
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % Handles tcblower state (tricky!)
+      \ifcase\tcbsegmentstate%
+        % 0 = Box contains only an upper part
+        \coordinate (c0) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \coordinate (c1) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) -- (c1);
+        \draw[c2,boxlines]
+          (c1) -- (c1 |- frame.south west);
+        \coordinate (c3) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \coordinate (c4) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+        \draw[c2,boxlines]
+          (c3) -- (c4);
+      \fi%
+    },
+    % Handles multipage box: last page
+    overlay last={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]frame.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.south east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east);
+    }
+  },
+  listboxstyle/.style={
+    boxxstyle,
+    before upper={\setlength{\parindent}{0pt}\parindent0em%
+      \everypar{{\setbox0\lastbox}\@minipagefalse\everypar{}}},
+    before skip=7pt, after skip=7pt,
+  }
+}
+\let\definition\relax
+\let\enddefinition\relax
+\let\theorem\relax
+\let\endtheorem\relax
+\let\corollary\relax
+\let\endcorollary\relax
+\newtcbtheorem[auto counter,number within=chapter,crefname={definition}{definitions},Crefname={Definition}{Definitions}]%
+{definition}{Definition}{boxxstyle}{def}
+\newtcbtheorem[use counter from=definition,crefname={theorem}{theorems},Crefname={Theorem}{Theorems}]%
+{theorem}{Theorem}{boxxstyle}{thm}
+\newtcbtheorem[use counter from=definition,crefname={corollary}{corollaries},Crefname={Corollary}{Corollaries}]%
+{corollary}{Corollary}{boxxstyle}{cor}
+\makeatletter
+\newcommand\tcb@cnt@Definitionautorefname{definition}
+\newcommand\tcb@cnt@Theoremautorefname{theorem}
+\newcommand\tcb@cnt@Corollaryautorefname{corollary}
+\crefformat{tcb@cnt@Definition}{example~#2#1#3}
+\Crefformat{tcb@cnt@Definition}{Example~#2#1#3}
+\makeatother
+
+% target system TS and development system DS alternatives
+
+\RequirePackage[strict]{changepage} % to detect even/odd page
+
+%% Versioning
+
+% \def\ts{T1}
+% \def\ds{D1}
+
+%% convert hash short-slug to url
+\newcommand{\hashtourl}[1]{\bookurl/#1}
+
+%% hash styling
+\newcommand{\hashstyle}[1]{\footnotesize\textmd{\texttt{\uppercase{#1}}}}
+
+\RequirePackage{microtype} % for squishing letters together
+
+%% marginboxref
+\RequirePackage{fontawesome5} % cool icons, free
+% \RequirePackage[fixed]{fontawesome5}
+\newcommand{\tsstuff}{} % initialize
+\newcommand{\dsstuff}{} % initialize
+\newcommand{\bothstuff}{} % initialize
+\makeatletter
+\NewDocumentCommand{\marginboxref}{%
+  O{unsafe} % or safe
+	m 	% hash (short-slug)
+	m   % type ts/ds/both/empty
+}{%
+	\renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+	\renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#3}{%
+  	{}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{marginboxref}{Undefined second required argument #3 to marginboxref}{}]%
+  \IfEqCase{#1}{%
+    {unsafe}{%
+    	\marginpar[%
+    		\href{\hashtourl{#2}}{%
+    			\adjustbox{valign=t}{%
+            \color{black}%
+    				\noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+    				\hspace{2pt}%
+    				\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \hashstyle{\faLink\\#2}
+      				\vfill
+      				\iconnow
+            ]%
+    				\end{minipage}%
+    			}%
+    		}%
+    	]{%
+    		\hfill
+    		\href{\hashtourl{#2}}{%
+    			\adjustbox{valign=t}{%
+            \color{black}%
+    				\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \raggedleft\hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+      				\raggedleft\hashstyle{\faLink\\#2}
+      				\vfill
+      				\iconnow
+            ]%
+    				\end{minipage}%
+    				\hspace{2pt}%
+    				\noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+    			}%
+    		}%
+    	}%
+    }%
+    {safe}{%
+      \marginnote[%
+        \href{\hashtourl{#2}}{%
+          \adjustbox{valign=t}{%
+            \color{black}%
+            \noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+            \hspace{2pt}%
+            \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \hashstyle{\faLink\\#2}
+              \vfill
+              \iconnow
+            ]%
+            \end{minipage}%
+          }%
+        }%
+      ]{%
+        \hfill
+        \href{\hashtourl{#2}}{%
+          \adjustbox{valign=t}{%
+            \color{black}%
+            \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \raggedleft\hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \raggedleft\hashstyle{\faLink\\#2}
+              \vfill
+              \iconnow
+            ]%
+            \end{minipage}%
+            \hspace{2pt}%
+            \noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+          }%
+        }%
+      }%
+    }%
+  }%
+}
+\makeatother
+
+\RequirePackage{wrapfig}%
+\setlength{\wrapoverhang}{0pt}%
+
+\makeatletter
+\NewDocumentCommand{\qrinline}{%
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}%
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}%
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}%
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrinline}{Undefined second required argument #1 to qrinline}{}]%
+  \nopagebreak%
+  \begin{wrapfigure}{r}{1.6cm}%
+    \nopagebreak%
+    \vspace{-1.3cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \nopagebreak%
+        \color{black}%
+        \hfill%
+        \nopagebreak%
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent%
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}%
+            \vfill%
+            \tsicon{\ts}\\%
+            \dsicon{\ds}%
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}%
+          \vfill%
+          \iconnow%
+        ]%
+        \end{minipage}%
+        \nopagebreak%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \nopagebreak%
+    \vskip -\baselineskip%
+    \nopagebreak%
+  \end{wrapfigure}%
+  \nopagebreak%
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qronline}{% baseline-aligned
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qronline}{Undefined second required argument #1 to qronline}{}]%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+      \color{black}%
+      \hfill
+      \raisebox{\depth}{%
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      }%
+      % }%
+    % }%
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrunline}{% top aligned, wrapped below
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrunline}{Undefined second required argument #1 to qrunline}{}]%
+  \begin{wrapfigure}{r}{1.6cm}
+    % \vspace{-1.575cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \vskip -1.5\baselineskip
+        \color{black}%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+  % \vskip -\baselineskip
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrunlinebottom}{% top aligned, wrapped below
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrunlinebottom}{Undefined second required argument #1 to qrunlinebottom}{}]%
+  % \setlength{\intextsep}{0pt}
+  % \begin{wrapfigure}{r}{1.6cm}
+    % \vspace{-1.575cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \color{black}%
+        \vskip -1.7\baselineskip%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    % \vskip -2\baselineskip
+    % \vspace{-1\baselineskip}
+  % \end{wrapfigure}
+  % \unskip
+  % \vspace{-1\baselineskip}
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrinlineproblems}{% for Problems sections
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrinlineproblems}{Undefined second required argument #1 to qrinlineproblems}{}]%
+  \begin{wrapfigure}{r}{1.6cm}
+    \vspace{-1.75cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \color{black}%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrinlinech}{%
+  m   % hash (short-slug)
+}{%
+  \begin{wrapfigure}{r}{1.6cm}
+    \vspace{-5.7cm}%
+    \color{black}%
+    \hfill
+    \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+    \raggedleft\hashstyle{\faLink\\#1}
+    \vfill
+    \phantom{.}
+    \end{minipage}%
+    \hspace{2pt}%
+    \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+}%
+\makeatother
+
+%% Utility for determining if it is currently a section, subsection, etc. for tsref and dsref commands
+
+\def\thisisa{} % def this at the end of each sectioning command ... used to test in tsref and dsref
+
+%% Url of this location in the doc
+
+\makeatletter
+\NewDocumentCommand{\defurlhere}{}{%
+	\IfEqCase{\thisisa}{%
+		{}{\def\urlhere{\bookurl}}%
+		{ch}{\def\urlhere{\churl}}%
+		{sec}{\def\urlhere{\securl}}%
+		{subsec}{\def\urlhere{\subsecurl}}%
+	}%
+}
+\makeatother
+
+%% Slug/long-id of this location in the doc
+
+\makeatletter
+\NewDocumentCommand{\defslughere}{}{%
+	\IfEqCase{\thisisa}{%
+		{}{\def\slughere{}}%
+		{ch}{\def\slughere{\chslug}}%
+		{sec}{\def\slughere{\secslug}}%
+		{subsec}{\def\slughere{\subsecslug}}%
+	}%
+}
+\makeatother
+
+%% Url concatenation
+
+\newcommand{\urladd}[2]{%
+	\ifstrempty{#2}{%
+		#1%
+	}{%
+		#1/#2%
+	}%
+}%
+
+%% sec and subsec url defs
+
+\newcommand{\defsecurlandslug}[1]{%
+	\def\securl{%
+		\urladd{\ifdefined\churl\churl\else\bookurl\fi}%
+		{#1}%
+	}%
+	\def\secslug{%
+		\urladd{\ifdefined\chslug\chslug\fi}%
+		{#1}%
+	}%
+}
+
+\newcommand{\defsubsecurlandslug}[1]{%
+	\def\subsecurl{%
+		\urladd{\ifdefined\securl \securl\else%
+			\ifdefined\churl \churl\fi%
+		\fi}{#1}%
+	}%
+	\def\subsecslug{%
+		\urladd{\ifdefined\secslug\secslug\else%
+			\ifdefined\chslug\chslug\fi%
+		\fi}{#1}%
+	}%
+}
+
+\newcommand{\defexampleurlandslug}[1]{%
+  \def\exampleurl{%
+    \urladd{\ifdefined\subsecurl \subsecurl\else%
+      \ifdefined\securl \securl\else%
+        \ifdefined\churl \churl\fi%
+      \fi%
+    \fi}{#1}%
+  }%
+  \def\exampleslug{%
+    \urladd{\ifdefined\subsecslug\subsecslug\else%
+      \ifdefined\secslug\secslug\else%
+        \ifdefined\chslug\chslug\fi%
+      \fi%
+    \fi}{#1}%
+  }%
+}
+
+%% TS
+
+\newcommand{\tsicon}[1]{\tikz{\node[draw,line width=.75pt,rounded corners=2pt,inner sep=2pt,outer sep=0] at (0,0) {\footnotesize\texttt{#1}};}}
+
+\newenvironment{tsenv}[2]{\tsref{#1}{#2}}{}
+
+\newcommand{\tsref}[2]{%
+	\defslughere
+	\qrinline{#2}{ts}%
+	\idit[tsenv][][][ts]{\slughere/#1}{#2}%
+}
+
+%% DS
+
+\newcommand{\dsicon}[1]{\tikz{\node[draw,line width=.75pt,rounded corners=2pt,inner sep=2pt,outer sep=0] at (0,0) {\footnotesize\texttt{#1}};}}
+
+\newenvironment{dsenv}[2]{\dsref{#1}{#2}}{}
+
+\newcommand{\dsref}[2]{%
+	\qrinline{#2}{ds}%
+	\idit[dsenv][][][ds]{\urladd{\slughere}{#1}}{#2}%
+}
+
+%% Lab background labbackground icon
+
+\DeclareRobustCommand{\labbackgroundicon}{\tikz[baseline]{\node[draw,thick,rounded corners=2pt,inner sep=2pt,outer sep=0,anchor=base,yshift=1pt] at (0,0) {\footnotesize\texttt{lab background}};}}
+
+% Chapter and section commands with ids
+
+\RequirePackage{xparse}
+\RequirePackage{xstring}
+\RequirePackage{etoolbox}
+
+\newcommand{\urlify}[1]{% this isn't working, would like to use it for auto-urls if none given in sectioning commands below
+	\MakeLowercase{%
+		\StrSubstitute{%
+			\StrSubstitute{%
+				\StrSubstitute{%
+					#1%
+				}{ }{-}%
+			}{,}{}%
+		}{'}{}%
+	}
+}
+
+% - for ungluing from the bottom of pages (introducing weird vertical space in he middle of pages)
+% \raggedbottom % books generally don't do raggedbottom
+
+% - for adding wherein to toc
+
+% \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+% \let\endchangemargin=\endlist
+
+\newcommand{\whereintotoc}[1]{% decided against it
+%   \addtocontents{toc}{%
+%     \begin{adjustwidth}{2.4em}{4ex}%
+% \smallskip\footnotesize\noindent\detokenize{\hspace{-5pt}#1}\leavevmode\par\smallskip
+%     \end{adjustwidth}%
+%   }%
+}
+
+% - utility for testing empty or novalue optional args
+
+\ExplSyntaxOn
+\DeclareExpandableDocumentCommand{\IfNoValueOrEmptyTF}{mmm}
+ {
+  \IfNoValueTF{#1}{#2}
+   {
+    \tl_if_empty:nTF {#1} {#2} {#3}
+   }
+ }
+\ExplSyntaxOff
+
+% - Automatic capitalization in titles
+%   As much as possible configured for Chicago Manual of Style §§ 8.155-8.165
+\RequirePackage{mfirstuc}%
+% -- pdf bookmarks
+\pdfstringdefDisableCommands{%
+  \let\capitalisewords\MFUsentencecase
+  \let\makefirstuc\MFUsentencecase
+}
+% -- exclusions
+\MFUexcl{\NoCaseChange}%
+\MFUexcl{\texttt}% exclude code
+\MFUexcl{\mc}% exclude C code
+% -- hyphenation
+\MFUhyphentrue % capitalize after hyphen
+% -- special
+\gMFUnocap{myRIO}%
+\gMFUnocap{z-Transform}%
+\gMFUnocap{Analog-to-Digital}%
+\gMFUnocap{Digital-to-Analog}%
+% -- articles
+\gMFUnocap{the}%
+\gMFUnocap{a}%
+\gMFUnocap{an}%
+% -- conjunctions
+\gMFUnocap{and}%
+\gMFUnocap{but}%
+\gMFUnocap{for}%
+\gMFUnocap{or}%
+\gMFUnocap{nor}%
+% -- prepositions
+\gMFUnocap{aboard}
+\gMFUnocap{about}
+\gMFUnocap{above}
+\gMFUnocap{across}
+\gMFUnocap{after}
+\gMFUnocap{against}
+\gMFUnocap{along}
+\gMFUnocap{amid}
+\gMFUnocap{among}
+\gMFUnocap{anti}
+\gMFUnocap{around}
+\gMFUnocap{as}
+\gMFUnocap{at}
+\gMFUnocap{before}
+\gMFUnocap{behind}
+\gMFUnocap{below}
+\gMFUnocap{beneath}
+\gMFUnocap{beside}
+\gMFUnocap{besides}
+% \gMFUnocap{between}
+\gMFUnocap{beyond}
+\gMFUnocap{but}
+\gMFUnocap{by}
+\gMFUnocap{concerning}
+\gMFUnocap{considering}
+\gMFUnocap{despite}
+\gMFUnocap{down}
+\gMFUnocap{during}
+\gMFUnocap{except}
+\gMFUnocap{excepting}
+\gMFUnocap{excluding}
+\gMFUnocap{following}
+\gMFUnocap{for}
+\gMFUnocap{from}
+\gMFUnocap{in}
+\gMFUnocap{inside}
+\gMFUnocap{into}
+\gMFUnocap{like}
+\gMFUnocap{minus}
+\gMFUnocap{near}
+\gMFUnocap{of}
+\gMFUnocap{off}
+\gMFUnocap{on}
+\gMFUnocap{onto}
+\gMFUnocap{opposite}
+\gMFUnocap{outside}
+\gMFUnocap{over}
+\gMFUnocap{past}
+\gMFUnocap{per}
+\gMFUnocap{plus}
+\gMFUnocap{regarding}
+\gMFUnocap{round}
+\gMFUnocap{save}
+\gMFUnocap{since}
+\gMFUnocap{than}
+\gMFUnocap{through}
+\gMFUnocap{to}
+\gMFUnocap{toward}
+\gMFUnocap{towards}
+\gMFUnocap{under}
+\gMFUnocap{underneath}
+\gMFUnocap{unlike}
+\gMFUnocap{until}
+\gMFUnocap{up}
+\gMFUnocap{upon}
+\gMFUnocap{versus}
+\gMFUnocap{via}
+\gMFUnocap{with}
+\gMFUnocap{within}
+\gMFUnocap{without}
+% -- other/multiple parts of speech
+% \gMFUnocap{to}% already included
+% \gMFUnocap{as}% already included
+
+
+% - Chapter
+\let\oldchapter\chapter
+\makeatletter
+\RenewDocumentCommand{\chapter}{%
+	O{#5}	% short title
+  O{}   % wherein
+	m 		% id
+	m 		% hash
+	m 		% title
+}{%
+	\@ifstar{\oldchapter*}{
+		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#5}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}
+		\def\thisisa{ch}
+		\lecture[\thisshorttitle]{\xcapitalisewords{#5}}{#3}% Beamer
+		\renewcommand{\churl}{\urladd{\bookurl}{#3}}%
+		\renewcommand{\chslug}{#3}%
+    \gdef\chapterhash{#4}%
+    \gdef\sectionhash{}%
+    \gdef\subsectionhash{}%
+		% \reversemarginpar % hack part 1/2
+    % couldn't get the following toc lines to work without indenting sections after the first chapter ... mysterious bug
+    % \addtocontents{toc}{%
+    % \vskip1\baselineskip
+    % \protect\noindent\protect\tikz{\protect\draw[line width=1pt,c1,line cap=round] (0,0) -- (\protect\linewidth-\protect\pgflinewidth,0);}
+    % \nobreak
+    % \vskip-1\baselineskip
+    % \nobreak
+    % }%
+    % \addtocontents{toc}{\vskip-6pt\par\noindent\protect\hrulefill\par}
+		\oldchapter[\thisshorttitle]{%\texorpdfstring{%
+			% \protect\marginnote[%
+			% 	\href{\hashtourl{#4}}{%
+			% 		\adjustbox{valign=t}{%
+			% 			\noindent\qrcode[height=\qrheight]{\hashtourl{#4}}%
+			% 			\hspace{2pt}%
+			% 			\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+			% 			\hashstyle{\faLink\\#4}
+			% 			\vfill
+			% 			\phantom{.}
+			% 			\end{minipage}%
+			% 		}%
+			% 	}%
+			% ]{%
+			% 	\hfill
+			% 	\href{\hashtourl{#3}}{%
+			% 		\adjustbox{valign=t}{%
+			% 			\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+			% 			\raggedleft\hashstyle{\faLink\\#4}
+			% 			\vfill
+			% 			\phantom{.}
+			% 			\end{minipage}%
+			% 			\hspace{2pt}%
+			% 			\noindent\qrcode[height=\qrheight]{\hashtourl{#4}}%
+			% 		}%
+			% 	}%
+			% }%
+			% }{} %
+      \xcapitalisewords{#5}%
+		}%
+		% \normalmarginpar % hack part 2/2
+    \IfNoValueOrEmptyTF{#2}{}{\whereinch{#2}\whereintotoc{#2}}%
+    \ifdefined\issolution \else%
+      \IfEqCase{\chaptername}{%
+        {Chapter}{%
+          \idit[chapter][#5][][][#2]{\chslug}{#4}%
+        }%
+        {Appendix}{%
+          \idit[appendix][#5][][][#2]{\chslug}{#4}%
+        }%
+      }%
+    \fi
+    \qrinlinech{#4}{}%
+		% \protect\qrcode{\churl}%
+	}
+}
+\makeatother
+\def\churl{\bookurl}
+\def\chslug{}
+\strictpagecheck
+
+% - include section
+
+\makeatletter
+\NewDocumentCommand{\includesection}{%
+  m               % hash
+}{%
+  \def\sourcefilenamev{\versionedpath/#1/index.tex}
+  \def\sourcefilenamevless{\versionlesspath/#1/index.tex}
+  \IfFileExists{\sourcefilenamev}{%
+    \input{\sourcefilenamev}
+  }{%
+    \IfFileExists{\sourcefilenamevless}{%
+      \input{\sourcefilenamevless}
+    }{%
+      \message{Warning: neither versioned \sourcefilenamev nor versionless source file \sourcefilenamevless exists!}
+    }
+  }
+}
+\makeatother
+
+% - insert section content (deprecated)
+
+\makeatletter
+\NewDocumentCommand{\insertversioned}{%
+	m 		% versioned ts/ds
+	m 		% hash
+	m 		% inherited y/n/empty
+}{%
+	\IfEqCase{#3}{% skip if inherited
+		{n}{%
+			\IfEqCase{#1}{%
+				{ts}{%
+					\def\sourcefilename{\versionedpath/#2/index.tex}
+					\IfFileExists{\sourcefilename}{%
+						\input{\sourcefilename}
+					}{%
+						\message{Warning: no versioned source file \sourcefilename}
+					}
+				}%
+				{ds}{%
+					\def\sourcefilename{\versionedpath/#2/index.tex}
+					\IfFileExists{\sourcefilename}{%
+						\input{\sourcefilename}
+					}{%
+						\message{Warning: no versioned source file \sourcefilename}
+					}
+				}%
+        {both}{%
+          \def\sourcefilename{\versionedpath/#2/index.tex}
+          \IfFileExists{\sourcefilename}{%
+            \input{\sourcefilename}
+          }{%
+            \message{Warning: no versioned source file \sourcefilename}
+          }
+        }%
+			}%
+		}%
+	}[\message{Subsection with hash #2 versioning inherited so no insertion necessary.}]%
+}
+\makeatother
+
+\newif\ifinappendix% Default is \inappendixfalse
+
+% - Section
+\let\oldsection\section
+\makeatletter
+\RenewDocumentCommand{\section}{%
+	O{#7} % short title
+	O{} 	% versioned ts/ds
+  O{}   % wherein
+  O{}   % lab background empty/labbackground
+	m 		% id
+	m 		% hash
+	m 		% title
+}{%
+  \ifinappendix%
+    \renewcommand{\thesection}{\Alph{chapter}.\arabic{section}}%
+  \else%
+    \renewcommand{\thesection}{\arabic{chapter}.\arabic{section}}%
+  \fi%
+  \FloatBarrier% clear floats from previous section
+  \gdef\sectionhash{#6}%
+  \gdef\subsectionhash{}%
+	\@ifstar{\oldsection*}{
+		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#7}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}%
+		\def\thisisa{sec}
+		\def\thissecversioned{#2}
+		\lecture[\thisshorttitle]{\xcapitalisewords{#7}}{#5}% Beamer
+		\defsecurlandslug{#5}% securl+secslug
+    \IfNoValueOrEmptyTF{#4}{%
+      \needspace{3\baselineskip}%
+      \oldsection[\thisshorttitle]{\xcapitalisewords{#7}}%
+    }{%
+      \needspace{3\baselineskip}%
+      \oldsection[\thisshorttitle~\texorpdfstring{\protect\labbackgroundicon}{ (lab background)}]{\xcapitalisewords{#7}~\labbackgroundicon}%
+    }%
+    \ifdefined\issolution \else % 
+  		\idit[section][#7][][#2][#3]{\secslug}{#6}%
+    \fi %
+    \qrinline{#6}{#2}%
+    \IfNoValueOrEmptyTF{#3}{}{}%
+	}
+}
+\makeatother
+
+% - Subsection
+
+\RequirePackage{needspace}%
+
+\makeatletter
+\NewDocumentCommand{\defthissubsecversioned}{m}{%
+	\IfEqCase{#1}{%
+		{ts}{%
+			\def\thissubsecversioned{ts}
+			\IfEqCase{\thissecversioned}{%
+				{ts}{\def\vinherited{y}}%
+				{ds}{\def\vinherited{n}}%
+        {both}{\def\vinherited{n}}%
+				{}{\def\vinherited{n}}%
+			}%
+		}%
+		{ds}{
+			\def\thissubsecversioned{ds}
+			\IfEqCase{\thissecversioned}{%
+				{ts}{\def\vinherited{n}}%
+				{ds}{\def\vinherited{y}}%
+        {both}{\def\vinherited{n}}%
+				{}{\def\vinherited{n}}%
+			}%
+		}%
+    {both}{
+      \def\thissubsecversioned{both}
+      \IfEqCase{\thissecversioned}{%
+        {ts}{\def\vinherited{n}}%
+        {ds}{\def\vinherited{n}}%
+        {both}{\def\vinherited{y}}%
+        {}{\def\vinherited{n}}%
+      }%
+    }%
+		{}{%
+			\IfEqCase{\thissecversioned}{%
+				{ts}{\def\thissubsecversioned{ts}\def\vinherited{y}}%
+				{ds}{\def\thissubsecversioned{ds}\def\vinherited{y}}%
+        {both}{\def\thissubsecversioned{both}\def\vinherited{y}}%
+				{}{\def\thissubsecversioned{}\def\vinherited{n}}%
+			}%
+		}%
+	}%
+}%
+\makeatother
+
+\let\oldsubsection\subsection
+\makeatletter
+\RenewDocumentCommand{\subsection}{%
+	O{#6}	% short title
+	O{} 	% versioned ts/ds
+  O{}   % wherein
+	m 		% id
+	m 		% hash
+	m 		% title
+}{%
+	\@ifstar{\oldsubsection*}{
+		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#6}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}
+		\def\thisisa{subsec}
+		\defthissubsecversioned{#2}%
+		\defsubsecurlandslug{#4}% subsecurl+subsecslug
+    \gdef\subsectionhash{#5}%
+    \needspace{2\baselineskip}%
+  	\oldsubsection[\thisshorttitle]{%\texorpdfstring{\protect\marginboxref{#5}{\thissubsecversioned}}{}
+    \xcapitalisewords{#6}}%
+    \nopagebreak%
+    \IfNoValueOrEmptyTF{#3}{}{\whereinsubsec{#3}}%
+    \nopagebreak%
+		% \insertversioned{\thissubsecversioned}{#5}{\vinherited}
+    \IfEq{\vinherited}{n}{%
+      \IfEqCase{\thissubsecversioned}{%
+        {}{}%
+      }[\qrinline{#5}{\thissubsecversioned}]%
+    }%
+    \nopagebreak%
+    \idit[subsection][#6][][\thissubsecversioned][#3]{\subsecslug}{#5}%
+    \nopagebreak%
+	}
+}
+\makeatother
+
+% - Subsubsection
+\let\oldsubsubsection\subsubsection
+% \renewcommand{\subsubsection}[1]{\oldsubsubsection{\protect\xcapitalisewords{#1}}}
+\makeatletter
+\RenewDocumentCommand{\subsubsection}{%
+  s     % star
+  O{#3} % short title
+  m     % title
+}{%
+  \IfBooleanTF{#1}{\oldsubsubsection*{\xcapitalisewords{#3}}}{
+    \IfNoValueOrEmptyTF{#2}{\def\thisshorttitle{\protect\xcapitalisewords{#3}}}{\def\thisshorttitle{\protect\xcapitalisewords{#2}}}
+    \oldsubsubsection[\thisshorttitle]{\xcapitalisewords{#3}}%
+  }
+}
+\makeatother
+
+% - Paragraph
+\let\oldparagraph\paragraph
+% \renewcommand{\paragraph}[1]{\oldparagraph{\protect\xcapitalisewords{#1}}}
+\makeatletter
+\RenewDocumentCommand{\paragraph}{%
+  s     % star
+  O{#3} % short title
+  m     % title
+}{%
+  \IfBooleanTF{#1}{\oldparagraph*{\xcapitalisewords{#3}}}{
+    \IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#3}}}{\def\thisshorttitle{\protect\xcapitalisewords{#2}}}
+    \oldparagraph[\thisshorttitle]{\xcapitalisewords{#3}}%
+  }
+}
+\makeatother
+
+% Examples
+
+\RequirePackage{environ}% for using \nobottom
+
+\counterwithin*{example}{chapter}
+\numberwithin{example}{chapter}
+
+\newtcolorbox[use counter=example,number within=chapter]{examplebox}[1][]{
+  examplestyle,
+  #1 % options
+}
+
+\makeatletter
+\NewDocumentEnvironment{myexample}{%
+  O{}   % versioned ts/ds
+  m     % id
+  m     % hash
+}{%
+  % \defthisexampleversioned{#1}%
+  \defexampleurlandslug{#2}% url+slug
+  % \stepcounter{example}
+  \needspace{3\baselineskip}%
+  \begin{examplebox}[
+    title={Example \theexample},%
+    label=#3%
+  ]%
+  \idit[example][Example \theexample][][#1][]{\exampleslug}{#3}%
+}{
+  \end{examplebox}
+  \suppressfloats[t]
+}
+\makeatother
+
+% Formatted output (code from Jupyter notebook)
+
+\newboolean{insideformattedoutput}
+\setboolean{insideformattedoutput}{false}
+
+\makeatletter
+\NewDocumentEnvironment{formattedoutput}{%
+}{%
+  % \needspace{3\baselineskip}%
+  \setboolean{insideformattedoutput}{true}
+  \begin{tcolorbox}[blanker, before skip=-4.5pt,after skip=4pt,left=18pt,top=2pt,bottom=2pt,borderline west={14pt}{0pt}{gray!50!white},%grow to left by=-\parindent,
+  overlay={%
+  \begin{tcbclipframe}
+  \coordinate (X) at ([xshift=2pt]frame.west);
+  \coordinate (Y) at ([xshift=2pt,yshift=-2pt]frame.north west);
+  \coordinate (Z) at ([xshift=12pt]frame.west);
+  % \fill[shading=ball,ball color=blue!50!white,opacity=0.5] (X) circle (1mm);
+  % \node[black,anchor=west] at (X) {$\rightarrow$};
+  \draw[->,white, line width=1pt, line cap=round, rounded corners=1pt] (Y) |- (Z);
+  \end{tcbclipframe}}]%
+  % $\rightarrow$ %
+}{
+  \end{tcolorbox}
+  \setboolean{insideformattedoutput}{false}
+}
+\makeatother
+
+\makeatletter
+\NewDocumentEnvironment{mintedwrapper}{%
+}{%
+  \begingroup
+  \ifthenelse{\boolean{insideformattedoutput}}{%
+    \setminted[text]{
+      autogobble,
+      fontsize=\small,
+      frame=none,
+      framerule=0pt,
+      % rulecolor=\color{gray!50},
+      framesep=4pt,
+      % xleftmargin=\parindent,
+      breaklines=true
+    }
+  }{}%
+}{
+  \endgroup
+}
+\makeatother
+
+% Resources
+
+% -- section
+
+\newcommand{\resources}[1]{%
+	\section{resources}{#1}{Resources}
+  Below are supplemental resources for Chapter \thechapter.
+}%
+
+% -- command
+
+% \newcounter{res}[chapter] % not using but could ... see \reslabeler
+% \addtocounter{res}{-1}
+
+\NewDocumentCommand{\resource}{%
+	O{#7} 		% short title
+	O{print} 	% print/digital(only)
+	O{} 			% versioned ts/ds
+  O{}       % wherein
+	m 				% id
+	m 				% hash
+	m 				% title
+}{%
+	\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#7}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}
+	\IfNoValueOrEmptyTF{#2}{\def\printordigital{print}}{\def\printordigital{digital}}
+	\def\thisisa{subsec}
+	\defthissubsecversioned{#3}%
+	\defsubsecurlandslug{#5}% subsecurl+subsecslug
+  \gdef\subsectionhash{#6}%
+	\def\restag{}
+	\IfEqCase{#2}{%
+    {print}{}%
+    {digital}{\def\restag{-digital}}%
+    {}{}%
+  }[\PackageError{resource}{Second optional argument #2 to resource command can only be print or digital or empty}{}]%
+  % \oldsubsection[\thisshorttitle]{\texorpdfstring{\protect\marginboxref{#6}{#3}}{} \xcapitalisewords{#7}}%
+  \oldsubsection[\thisshorttitle]{\xcapitalisewords{#7}}%
+  \IfNoValueOrEmptyTF{#4}{}{\whereinsubsec{#4}}%
+	\idit[resource\restag][#7][][#3][#4]{\subsecslug}{#6}%
+  \IfEq{\vinherited}{n}{%
+    \IfEqCase{\thissubsecversioned}{%
+      {}{}%
+    }[\qrinline{#6}{\thissubsecversioned}]%
+  }%
+	\message{This resource's version is \thissubsecversioned}
+	\message{... inherited version: \vinherited <--}
+	% \insertversioned{\thissubsecversioned}{#6}{\vinherited}
+}
+
+% Lab command
+
+\newcounter{lab}
+\addtocounter{lab}{-1}
+
+\makeatletter
+\NewDocumentCommand{\lab}{%
+	O{#6}	% short title
+	O{both} % versioned ts/ds/both (both default)
+  O{}   % wherein
+	m 		% id
+	m 		% hash
+	m 		% title
+}{%
+	\@ifstar{\oldsection*}{
+		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#6}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}
+		\def\thisisa{sec}
+		\def\thissecversioned{#2}
+    \gdef\sectionhash{#5}%
+    \gdef\subsectionhash{}%
+		\lecture[Lab Exercise \arabic{chapter}: \thisshorttitle]{\xcapitalisewords{#6}}{#4}% Beamer
+		\defsecurlandslug{#4}% securl+secslug
+    % \vspace{1\baselineskip}
+    \clearpage
+    % \checkoddpage\ifoddpage%
+    %   \hfill
+    % \else%
+    %   \noindent
+    % \fi%
+    \noindent
+    \begin{tikzpicture}
+      \draw[line width=16pt,c1,line cap=round] (0,0) -- coordinate[pos=0.5] (mid) (\linewidth-\pgflinewidth,0);
+      \node[fill=white,text=c1] at (mid) {\fontsize{20pt}{20}\selectfont \bfseries Lab {\fontsize{20pt}{20}\selectfont \thechapter}};
+      % \node[draw,c1,line width=1pt,rounded corners=3pt,text=c1] at (0,0) {\fontsize{10pt}{13}\selectfont \bfseries Lab {\fontsize{24pt}{24}\selectfont \thechapter}};
+    \end{tikzpicture}
+    \nobreak
+    \vspace{-.5\baselineskip}
+    \setcounter{subsection}{0}
+    \setcounter{subsubsection}{0}
+    \setcounter{paragraph}{0}
+    \nobreak
+    % \oldsection*{Lab Exercise \arabic{chapter} \texorpdfstring{\protect\marginboxref{#5}{#2}}{} \xcapitalisewords{#6}}%
+    \oldsection*{Lab Exercise \arabic{chapter}: \xcapitalisewords{#6}}%
+    \addcontentsline{toc}{section}{\protect\hphantom{\protect\numberline{\protect\thesection}}Lab Exercise \arabic{chapter}: \thisshorttitle}%
+    \IfNoValueOrEmptyTF{#3}{}{\whereinsec{#3}}%
+    \qrinline{#5}{#2}%
+    \renewcommand{\thesection}{L\arabic{chapter}}%
+    \idit[lab][#6][][#2][#3]{\secslug}{#5}%%
+		% \insertversioned{#2}{#5}{n}
+	}
+}
+\makeatother
+
+% Internal id for crossreferencing externally
+
+\newwrite\mywrite
+\newcount\mycount
+\makeatletter
+\newcommand{\makeallother}{%
+  \mycount0\relax
+  \loop\ifnum\mycount<255\relax
+  \catcode\mycount12\relax
+  \advance\mycount by 1\relax
+  \repeat
+}
+\newcommand*{\VerbatimFile}[2]{%
+  \begingroup
+  \newlinechar\endlinechar
+  \makeallother
+  \everyeof{\noexpand}%
+  \immediate\openout\mywrite #1\relax
+  \def\from##1{\immediate\write\mywrite{\@@input ##1 }}%
+  #2\relax
+  \immediate\closeout\mywrite
+  \endgroup
+}
+\makeatother
+\ifdefined\issolution
+\else
+\AtBeginDocument{\ifdefined\nowrite \else\immediate\openout\mywrite{./common/book-json/book-0-raw.json}\relax\iwrite{\bl}\iwrite{"text-edition": "\textedition","text-ts": "\ts","text-ds": "\ds","book-url": "\bookurl",}\fi}
+\AtEndDocument{%
+	\ifdefined\nowrite \else
+	\iwrite{\br}
+	\immediate\closeout\mywrite
+		\VerbatimFile{\jobname.output}{%
+			\from{\jobname.tex}%
+			\from{./common/book-json/book-0-raw.json}%
+		}%
+	\fi
+}
+\begingroup
+\catcode`<=1 \catcode`>=2
+\catcode`{=12 \catcode`}=12
+\gdef\bl<{>
+\gdef\br<}>
+\endgroup
+\fi
+
+\newcommand{\iwrite}[1]{%
+	\ifdefined\nowrite \else
+		\immediate\write\mywrite{#1}
+	\fi
+}
+
+%% register/check short-url short-slug hash
+
+\makeatletter
+\newcommand{\hashes}{}
+\newcommand{\addhash}[1]{%
+  \ifcsname @number@#1\endcsname% Check if macro exists
+  	\PackageError{hashes}{Hash #1 already exists. Try another.}{}
+  \else% ...if not...
+    \@namedef{@number@#1}{}% ...define it and...
+  \fi
+}
+\makeatother
+
+
+
+%% idit
+\newcommand{\lablabeler}[1]{% this is the magic
+  \refstepcounter{lab}\label[lab]{#1}%
+}
+\newcommand{\reslabeler}[1]{% this isn't necessary if we continue using the section number as the counter, but we can assign a separate counter here (as above with lab) if that's preferred
+  \label[resource]{#1}%
+}
+
+\RequirePackage{xparse}
+
+\makeatletter
+\NewDocumentCommand{\idit}{%
+	O{page} % type: page/chapter/section/subsection/resource/resource-digital/lab/problem/labproblem/exturl
+	O{} 		% title
+	O{} 		% url
+	O{}			% versioned ts/ds/empty
+  O{}     % wherein
+	m 			% id (key)
+	m 			% hash
+}{%
+  \@bsphack%
+  \IfEq{#1}{lab}{\lablabeler{#7}}{%
+    \IfEq{#1}{resource}{\reslabeler{#7}}{%
+      \IfEq{#1}{resource-digital}{\reslabeler{#7}}{%
+        \IfEq{#1}{exturl}{\label{#7}}{%
+          \IfEq{#1}{example}{}{% example labeled with tcolorbox
+            \ifinappendix%
+              \label[appendix]{#7}% if there's trouble on the website from this, we'll have to separately handle subappendix, subsubappendix, and subsubsubappendix
+            \else%
+              \label[#1]{#7}%
+            \fi%
+          }%
+        }%
+      }%
+    }%
+  }%
+	\IfNoValueOrEmptyTF{#4}{% default versioning
+		\def\specificv{no} % not a versioned section
+	}{% provided versioning
+		\IfEqCase{#4}{%
+			{ts}{\def\specificv{ts}}%
+			{ds}{\def\specificv{ds}}%
+      {both}{\def\specificv{both}}%
+		}%
+	}%
+	\def\thists{\ts}% use this doc's versions
+	\def\thisds{\ds}% use this doc's versions
+  \def\idtitle{\unexpanded{#2}}% default: don't expand macros
+  \def\theproblemifapplicable{}% default: so problem-num is empty if not a problem
+  \IfEqCase{#1}{%
+    {problem}{% regular problem
+      \def\idtitle{#2}%
+      \def\theproblemifapplicable{\theexercise}% problem number
+    }%
+    {labproblem}{%
+      \def\idtitle{#2}%
+      \def\theproblemifapplicable{\thelabexercise}% lab problem number
+    }%
+  }%
+  \ifdefined\issolution
+  \else
+	\iwrite{"#7": \bl
+		"hash": "#7",
+    "id": "#6",
+		"type": "#1",
+		"title": "\idtitle",
+		"url": "#3",
+		"v-specific": "\specificv",
+		"v-ts": "\thists",
+		"v-ds": "\thisds",
+		"ch": "\thechapter",
+    "sec": "\thesection",
+    "subsec": "\thesubsection",
+    "chapterhash": "\chapterhash",
+    "sectionhash": "\sectionhash",
+    "subsectionhash": "\subsectionhash",
+		"p": "\thepage",
+    "problem-num": "\theproblemifapplicable",
+    "wherein": "\unexpanded{#5}" \br,
+	}%
+  \fi
+  \unskip\ignorespaces%
+  \@esphack%
+}%
+\makeatother
+
+\gdef\chapterhash{}%
+\gdef\sectionhash{}%
+\gdef\subsectionhash{}%
+
+%% idfig
+\RequirePackage{keyval}
+\makeatletter
+% ========= KEY DEFINITIONS =========
+\define@key{idfig}{color}{\def\mm@color{#1}}
+\define@key{idfig}{format}{\def\mm@format{#1}}
+\define@key{idfig}{credit}{\def\mm@credit{#1}}
+\define@key{idfig}{permission}{\def\mm@permission{#1}}
+\define@key{idfig}{reprint}{\def\mm@reprint{#1}}
+\define@key{idfig}{territory}{\def\mm@territory{#1}}
+\define@key{idfig}{language}{\def\mm@language{#1}}
+\define@key{idfig}{edition}{\def\mm@edition{#1}}
+\define@key{idfig}{fair}{\def\mm@fair{#1}}
+\define@key{idfig}{publicity}{\def\mm@publicity{#1}}
+\define@key{idfig}{size}{\def\mm@size{#1}}
+\define@key{idfig}{permissioncomment}{\def\mm@permissioncomment{#1}}
+\define@key{idfig}{layoutcomment}{\def\mm@layoutcomment{#1}}
+\DeclareDocumentCommand{\idfig}{%
+	o% key/value pairs
+	m% id
+	m% caption
+}{%
+  \begingroup%
+  \setkeys{idfig}{%
+		color={bw},% bw/color
+		format={pdf},% pdf/jpg/png
+		credit={na},% credit line if not in caption
+		permission={authored},% permissions status: permission/public/fair/cc/seeking/comment
+		reprint={pe},% reprint permissions: pe[print+electronic]/p[print only]/e[electronic only]
+		territory={world},% territory: world/restricted
+		language={all},% language: all/english[only]/other[comment]
+		edition={all},% edition: all/one/ncopies[comment]
+		fair={na},% fair use analysis conducted: na/applied
+		publicity={yes},% approved for publicity: yes/no
+		size={na},% size restrictions/requirements
+		permissioncomment={na},% permissions comments
+		layoutcomment={na},% design and layout comments
+  	#1% optional argument key/value pairs
+	}%
+	\label{#2}
+  \ifdefined\issolution
+  \else
+	\iwrite{"#2": \bl
+		"type": "figure",
+		"caption": "\unexpanded{#3}",
+    "filename": "\graphicslist",
+		"number": "\thefigure",
+		"color": "\mm@color",
+		"format": "\mm@format",
+		"credit": "\mm@credit",
+		"permission": "\mm@permission",
+		"reprint": "\mm@reprint",
+		"territory": "\mm@territory",
+		"language": "\mm@language",
+		"edition": "\mm@edition",
+		"fair": "\mm@fair",
+		"publicity": "\mm@publicity",
+		"size": "\mm@size",
+		"permissioncomment": "\mm@permissioncomment",
+		"layoutcomment": "\mm@layoutcomment",
+		"ch": "\thechapter",
+		"sec": "\thesection",
+    "subsec": "\thesubsection",
+    "chapterhash": "\chapterhash",
+    "sectionhash": "\sectionhash",
+    "subsectionhash": "\subsectionhash",
+		"p": \thepage \br,
+	}%
+  \fi
+  \endgroup%
+}
+\makeatother
+
+% Tables
+
+\RequirePackage{etoolbox}
+% \AtBeginEnvironment{tabular}{\fontsize{8pt}{9.6}\selectfont} % globally sets tabular font size
+\makeatletter
+\g@addto@macro\@floatboxreset\footnotesize % for tables and figures (and leaves tabular alone)
+\makeatother
+\AtBeginEnvironment{longtable}{\footnotesize} % globally sets longtable font size
+\setlength{\cmidrulewidth}{.5pt}%
+\usepackage{multirow}%
+\usepackage{array}%
+\setlength{\cmidrulewidth}{.5pt}%
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}%
+\newcolumntype{C}[1]{>{\PreserveBackslash\centering}p{#1}}%
+\newcolumntype{?}{!{\vrule width .5pt}}%
+
+\makeatletter
+\DeclareDocumentCommand{\idtab}{%
+  m% id
+  m% caption
+}{%
+  \begingroup%
+  \label{#1}
+  \ifdefined\issolution
+  \else
+  \iwrite{"#1": \bl
+    "type": "table",
+    "caption": "\unexpanded{#2}",
+    "number": "\thetable",
+    "ch": "\thechapter",
+    "sec": "\thesection",
+    "subsec": "\thesubsection",
+    "p": \thepage \br,
+  }%
+  \fi
+  \endgroup%
+}
+\makeatother
+
+% Figures
+
+\RequirePackage{etoolbox}
+\def\graphicslist{} % accumulate graphics files for \figcaption
+\def\fps@figure{tbhp}
+\def\fps@table{tbhp}
+\NewCommandCopy\includegraphicsorig\includegraphics
+\RenewDocumentCommand{\includegraphics}{o m}{%
+\listgadd\graphicslist{#2}%
+\IfNoValueOrEmptyTF{#1}{%
+\includegraphicsorig{#2}%
+}{%
+\includegraphicsorig[#1]{#2}%
+}%
+}%
+% don't need one for \includestandalone because it apparently calls \includegraphics
+
+\AtBeginEnvironment{figure}{%
+  \gdef\graphicslist{}%
+}% reset graphics list
+
+%% Figure captions
+
+\makeatletter
+\NewExpandableDocumentCommand{\figcaption}{%
+  o% key/value pairs for idfig
+  O{float}% or nofloat DEPRECATED (does nothing now)
+  m% id
+  m% caption
+}{%
+  \ifdefined\issolution % solutions manual
+    \IfInsideSolutionTF{}{%
+      \extreffig{#3}%
+    }%
+  \fi %
+  % \IfEqCase{#2}{% don't need this since we're using \begin{figure}[H] instead
+  %   {float}{\caption{#4}}%
+  %   {nofloat}{\captionof{figure}{#4}}%
+  % }[\PackageError{figcaption}{Undefined second optional argument #2 to figcaption}{}]%
+  \caption{#4}
+  \ifdefined\issolution % in solutions manual
+    \IfInsideSolutionT{% if in exercise SOLUTION, give regular label
+      \label{#3} 
+    }% otherwise don't label it
+  \else % idfig if not in solutions manual
+    \idfig[#1]{#3}{#4}
+  \fi %
+  \gdef\graphicslist{}% reset graphics list
+}%
+\makeatother
+
+%% Table captions
+
+\makeatletter
+\NewExpandableDocumentCommand{\tabcaption}{%
+  O{#4}% short caption
+  O{float}% or nofloat (use captionof)
+  m% id
+  m% caption
+}{%
+  \ifdefined\issolution % solutions manual
+    \IfInsideSolutionF{%
+      \extreftab{#3}% 
+    }%
+  \fi %
+  \IfEqCase{#2}{%
+    {float}{\caption[#1]{#4}}%
+    {nofloat}{\captionof{table}[#1]{#4}}%
+  }[\PackageError{tabcaption}{Undefined optional argument #2 to tabcaption}{}]%
+  \ifdefined\issolution % in solutions manual
+    \IfInsideSolutionT{% if in exercise SOLUTION, give regular label
+      \label{#3} 
+    }%
+  \else % idlab if not in solutions manual
+    \idtab{#3}{#4}
+  \fi %
+}%
+\makeatother
+
+\makeatletter
+\newcommand{\extreffig}[1]{%
+  \@namedef{thefigure}{\ref{#1}}% always going to be a figure
+}
+\makeatother
+
+\makeatletter
+\newcommand{\extreftab}[1]{%
+  \@namedef{thetable}{\ref{#1}}% always going to be a figure
+}
+\makeatother
+
+
+
+\usepackage{trace} % uncomment to see difference
+
+% Keywords
+
+\newcommand{\keyword}[2][]{%
+	\ifthenelse{\isempty{#1}}{%
+		\textbf{#2}%
+	}{%
+		\textbf{#2}%
+	}%
+}%
+
+% whereins
+\newcommand{\whereinch}[1]{% and against printing these
+	% \vspace{-4\baselineskip}% this might run into epigraphs if used
+	% \centerline{%
+	% 	\begin{minipage}{.8\linewidth}
+	% 		\noindent\raggedright\textit{#1}%
+	% 	\end{minipage}%
+	% }%
+	% \vspace{4\baselineskip}%
+}
+\newcommand{\whereinsec}[1]{% decided against printing these
+  % % \vspace{-4\baselineskip}% this might run into epigraphs if used
+  % \centerline{%
+  %   \begin{minipage}{.8\linewidth}
+  %     \noindent\raggedright\textit{#1}%
+  %   \end{minipage}%
+  % }%
+  % \vspace{.5\baselineskip}%
+}
+\newcommand{\whereinsubsec}[1]{%
+  %% empty display for now ... might be useful in toc
+  % \vspace{-4\baselineskip}% this might run into epigraphs if used
+  % \centerline{%
+  %   \begin{minipage}{.8\linewidth}
+  %     \noindent\raggedright\textit{#1}%
+  %   \end{minipage}%
+  % }%
+  % \vspace{4\baselineskip}%
+}
+
+% Pandoc accomodation
+
+\def\tightlist{} % ignore \tightlist commands inserted by pandoc in lists
+
+%% crossref
+
+\newenvironment{pandoccrossrefsubfigures}
+{
+  \begin{figure}
+}
+{
+  \end{figure}
+}
+
+% icons -- fontawesome already included above
+\RequirePackage{svg}
+\def\mouser{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/mouse-right}}}
+\def\mousel{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/mouse-left}}}
+\def\enrc{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/new_con}}}
+\def\eresume{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/resume_co}}}
+\def\estepover{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/stepover_co}}}
+\def\estepinto{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/stepinto_co}}}
+\def\estepreturn{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/stepreturn_co}}}
+\def\eterminate{\raisebox{-.23\baselineskip}{\includegraphics[height=1\baselineskip]{figures/eclipse-icons/terminate_co}}}
+
+% itemize and enumerate
+
+\RequirePackage{enumitem}
+\setlist{itemsep=0pt,parsep=0pt,topsep=0pt,listparindent=\parindent}
+\setlist[enumerate,1]{label=\arabic*.,ref=\skipifcurrent{\getCurrentSectionNumber.}\arabic*}
+\setlist[enumerate,2]{label=\alph*.,ref=\theenumi\alph*}
+\setlist[enumerate,3]{label=\roman*.,ref=\theenumii.\roman*}
+
+%% referencing items
+
+\crefname{enumi}{item}{items}
+\Crefname{enumi}{Item}{Items}
+\crefname{enumii}{item}{items}
+\Crefname{enumii}{Item}{Items}
+\crefname{enumiii}{item}{items}
+\Crefname{enumiii}{Item}{Items}
+\crefname{enumiv}{item}{items}
+\Crefname{enumiv}{Item}{Items}
+
+\crefalias{subsection}{componentitem}
+\crefname{componentitem}{item}{items}
+\Crefname{componentitem}{Item}{Items}
+
+\makeatletter
+\newcommand{\getCurrentSectionNumber}{%
+  \ifnum\c@section=0 %
+  \thechapter
+  \else
+  \ifnum\c@subsection=0 %
+  \thesection
+  \else
+  \ifnum\c@subsubsection=0 %
+  \thesubsection
+  \else
+  \thesubsubsection
+  \fi
+  \fi
+  \fi
+}
+\makeatother
+
+\DeclareRobustCommand\skipifequals[2]{%
+  \ifnum\pdfstrcmp{#1}{#2}=0
+  \else
+    #2%
+  \fi
+}
+\newcommand\skipifcurrent[1]{\protecting{\skipifequals{#1}}{#1}}
+
+% Index
+
+% the following commands requires hyperref loaded with hyperindex=false
+\NewDocumentCommand{\myindex}{%
+  s     % star for bold (primary entry)
+  O{}   % start/stop/empty
+  O{}   % lab (L) or not
+  O{}   % how index entry should appear
+  O{}   % under entry
+  m     % index/index as
+}{%
+  % formatting of the index number
+  \IfBooleanTF{#1}{% if star (bold/primary)
+    \IfNoValueOrEmptyTF{#2}{% if not range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{|bbb}% need pipe
+      }{% if lab
+        \def\indexcodepageformat{|bbbl}% need pipe
+      }%
+    }{% if range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{bbb}% no pipe
+      }{% if lab
+        \def\indexcodepageformat{bbbl}% no pipe
+      }%
+    }%
+  }{% if not star (not bold/primary)
+    \IfNoValueOrEmptyTF{#2}{% if not range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{|hyperpage}% need pipe
+      }{% if lab
+        \def\indexcodepageformat{|hyperpagel}% need pipe
+      }%
+    }{% if range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{hyperpage}% no pipe
+      }{% if lab
+        \def\indexcodepageformat{hyperpagel}% no pipe
+      }%
+    }%
+  }%
+  \IfNoValueOrEmptyTF{#2}{\def\indexcodess{}}{% if start or stop
+    \IfEqCase{#2}{% which, start or stop?
+      {start}{\def\indexcodess{|(}}%
+      {stop}{\def\indexcodess{|)}}%
+    }[\def\indexcodess{}]%
+  }%
+  % display/appearance of the entry
+  \IfSubStr{#6}!{% if ! appears (subentry)
+    \message{A ! has appeared!}%
+    \StrCount{#6}![\exclamationcount]%
+    \StrBehind[\exclamationcount]{#6}![\indexcodedisplay]% behind last !
+    \IfNoValueOrEmptyTF{#4}{% don't add @ anything
+      \def\indexcodedisplay{}%
+    }{% use @ and display version
+      \xpreto\indexcodedisplay{@}% prepend @
+    }%
+  }{% if no ! appears
+    \IfNoValueOrEmptyTF{#4}{% don't add @ anything
+      \def\indexcodedisplay{}%
+    }{% use @ and display version
+      \def\indexcodedisplay{@#4}%
+    }%
+  }%
+  % index entry itself
+  \IfNoValueOrEmptyTF{#5}{%
+    \def\indexunder{}%
+  }{%
+    \def\indexunder{#5!}%
+  }%
+  % \IfNoValueOrEmptyTF{#4}{%
+  %   \def\indexappearance{#6}%
+  % }{%
+  %   \def\indexappearance{#4}%
+  % }%
+  \def\indexappearance{#6}% I think this is right? Not sure why we would use show here
+  \index{\indexunder\indexappearance\indexcodedisplay\indexcodess\indexcodepageformat}%
+}
+\NewDocumentCommand{\indexc}{%
+  s   % star for bold (primary entry)
+  O{} % start/stop/empty
+  O{} % lab (L) or not
+  O{} % post code annotation
+  O{} % function list true/empty
+  O{} % under entry
+  m   % language, e.g. c, matlab, etc.
+  v   % verbatim code
+}{%
+  % formatting of the index number
+  \IfBooleanTF{#1}{% if star (bold/primary)
+    \IfNoValueOrEmptyTF{#2}{% if not range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{|bbb}% need pipe
+      }{% if lab
+        \def\indexcodepageformat{|bbbl}% need pipe
+      }%
+    }{% if range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{bbb}% no pipe
+      }{% if lab
+        \def\indexcodepageformat{bbbl}% no pipe
+      }%
+    }%
+  }{% if not star (not bold/primary)
+    \IfNoValueOrEmptyTF{#2}{% if not range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{|hyperpage}% need pipe
+      }{% if lab
+        \def\indexcodepageformat{|hyperpagel}% need pipe
+      }%
+    }{% if range
+      \IfNoValueOrEmptyTF{#3}{% if not lab
+        \def\indexcodepageformat{hyperpage}% no pipe
+      }{% if lab
+        \def\indexcodepageformat{hyperpagel}% no pipe
+      }%
+    }%
+  }%
+  \IfNoValueOrEmptyTF{#2}{\def\indexcodess{}}{% if start or stop
+    \IfEqCase{#2}{% which, start or stop?
+      {start}{\def\indexcodess{|(}}%
+      {stop}{\def\indexcodess{|)}}%
+    }[\def\indexcodess{}]%
+  }%
+  % post-code annotation
+  \IfNoValueOrEmptyTF{#4}{%
+    \def\indexcodepost{}%
+  }{%
+    % \IfNoValueOrEmptyTF{#6}{% if not under
+    %   \def\indexcodepost{}% going to be given a structure below ... can't do top-level with annotation, but I think it's ok
+    % }{% under something (e.g. Analog-to-digital conversion)
+      \IfEqCase{#4}{% which annotation?
+        {cop}{\def\indexcodepost{ C operator}}%
+        {ccon}{\def\indexcodepost{ std. lib. constant}}%
+        {cfun}{\def\indexcodepost{ C/std. lib. fun.}}%
+        {ctype}{\def\indexcodepost{ C/std. lib. type}}%
+        {cmacro}{\def\indexcodepost{ std. lib. macro}}%
+        {cheader}{\def\indexcodepost{ std. lib. header}}%
+        {cstruct}{\def\indexcodepost{ std. lib. structure}}%
+        {cqual}{\def\indexcodepost{ C qualifier}}%
+        {cspec}{\def\indexcodepost{ C storage spec.}}%
+        {myriocon}{\def\indexcodepost{ myRIO constant}}%
+        {myrioheader}{\def\indexcodepost{ myRIO header}}%
+        {myriofun}{\def\indexcodepost{ myRIO fun.}}%
+        {myriotype}{\def\indexcodepost{ myRIO type}}%
+        {myriostruct}{\def\indexcodepost{ myRIO structure}}%
+        {myriomacro}{\def\indexcodepost{ myRIO macro}}%
+        {tcon}{\def\indexcodepost{ T1 constant}}%
+        {ttype}{\def\indexcodepost{ T1 type}}%
+        {tmacro}{\def\indexcodepost{ T1 macro}}%
+        {tstruct}{\def\indexcodepost{ T1 structure}}%
+        {theader}{\def\indexcodepost{ T1 header}}%
+        {tfun}{\def\indexcodepost{ T1 fun.}}%
+        {ucon}{\def\indexcodepost{ user constant}}%
+        {utype}{\def\indexcodepost{ user type}}%
+        {umacro}{\def\indexcodepost{ user macro}}%
+        {ustruct}{\def\indexcodepost{ user structure}}%
+        {uheader}{\def\indexcodepost{ user header}}%
+        {ufun}{\def\indexcodepost{ user fun.}}%
+        {ufunl0}{\def\indexcodepost{ Lab 0 user fun.}}%
+        {ufunl1}{\def\indexcodepost{ Lab 1 user fun.}}%
+        {ufunl2}{\def\indexcodepost{ Lab 2 user fun.}}%
+        {ufunl3}{\def\indexcodepost{ Lab 3 user fun.}}%
+        {ufunl4}{\def\indexcodepost{ Lab 4 user fun.}}%
+        {ufunl5}{\def\indexcodepost{ Lab 5 user fun.}}%
+        {ufunl6}{\def\indexcodepost{ Lab 6 user fun.}}%
+        {ufunl7}{\def\indexcodepost{ Lab 7 user fun.}}%
+        {ufunl8}{\def\indexcodepost{ Lab 8 user fun.}}%
+        {linuxheader}{\def\indexcodepost{ Linux header}}%
+        {pthreadtype}{\def\indexcodepost{ pthread type}}%
+        {pthreadfun}{\def\indexcodepost{ pthread fun.}}%
+        {matlab}{\def\indexcodepost{ MATLAB fun.}}%
+      }[\def\indexcodepost{}]%
+    % }%
+  }%
+  % remove post-code annotation for MATLAB function in function list (redundant)
+  \IfEq{#4}{matlab}{%
+    \def\indexcodepostfunlist{}%
+  }{%
+    \def\indexcodepostfunlist{\indexcodepost}%
+  }%
+  % display/appearance of the entry
+  \IfEq{#5}{true}{% then add to function list
+    \IfEqCase{#7}{% which language
+      {c}{\def\indexcodelist{C functions}}%
+      {matlab}{\def\indexcodelist{MATLAB functions}}%
+    }[\PackageError{indexc}{Undefined second optional argument #5 to indexc}{}]%
+    \index{\indexcodelist!#8@\indexformatcode{#7}{#8}\indexcodepostfunlist\indexcodess\indexcodepageformat}%
+  }{}%
+  % index entry itself
+  \IfNoValueOrEmptyTF{#6}{%
+    \IfEqCase{#4}{% which? \def\indexcodepost{} because it's redundant if under one of these
+      {cop}{\def\indexunder{C programming language!operators!}\def\indexcodepost{}}%
+      {ccon}{\def\indexunder{C programming language!constants (including standard library)!}\def\indexcodepost{}}%
+      {cfun}{\def\indexunder{C programming language!functions (including standard library)!}\def\indexcodepost{}}%
+      {ctype}{\def\indexunder{C programming language!types (including standard library)!}\def\indexcodepost{}}%
+      {cmacro}{\def\indexunder{C programming language!macros (including standard library)!}\def\indexcodepost{}}%
+      {cstruct}{\def\indexunder{C programming language!structures (including standard library)!}\def\indexcodepost{}}%
+      {cheader}{\def\indexunder{C standard library!header files!}\def\indexcodepost{}}%
+      {cqual}{\def\indexunder{C programming language!qualifiers!}\def\indexcodepost{}}%
+      {cspec}{\def\indexunder{C programming language!storage-class specifiers!}\def\indexcodepost{}}%
+      {myriocon}{\def\indexunder{myRIO C library!constants!}\def\indexcodepost{}}%
+      {myrioheader}{\def\indexunder{myRIO C library!header files!}\def\indexcodepost{}}%
+      {myriofun}{\def\indexunder{myRIO C library!functions!}\def\indexcodepost{}}%
+      {myriotype}{\def\indexunder{myRIO C library!types!}\def\indexcodepost{}}%
+      {myriostruct}{\def\indexunder{myRIO C library!structures!}\def\indexcodepost{}}%
+      {myriomacro}{\def\indexunder{myRIO C library!macros!}\def\indexcodepost{}}%
+      {tcon}{\def\indexunder{T1 C library!constants!}\def\indexcodepost{}}%
+      {ttype}{\def\indexunder{T1 C library!types!}\def\indexcodepost{}}%
+      {tmacro}{\def\indexunder{T1 C library!macros!}\def\indexcodepost{}}%
+      {tstruct}{\def\indexunder{T1 C library!structures!}\def\indexcodepost{}}%
+      {theader}{\def\indexunder{T1 C library!header files!}\def\indexcodepost{}}%
+      {tfun}{\def\indexunder{T1 C library!functions!}\def\indexcodepost{}}%
+      {ucon}{\def\indexunder{C identifiers written for lab exercises!constants!}\def\indexcodepost{}}%
+      {utype}{\def\indexunder{C identifiers written for lab exercises!types!}\def\indexcodepost{}}%
+      {umacro}{\def\indexunder{C identifiers written for lab exercises!macros!}\def\indexcodepost{}}%
+      {ustruct}{\def\indexunder{C identifiers written for lab exercises!structures!}\def\indexcodepost{}}%
+      {uheader}{\def\indexunder{C identifiers written for lab exercises!header files!}\def\indexcodepost{}}%
+      {ufunl0}{\def\indexunder{C functions written for lab exercises!Lab exercise 0!}\def\indexcodepost{}}%
+      {ufunl1}{\def\indexunder{C functions written for lab exercises!Lab exercise 1!}\def\indexcodepost{}}%
+      {ufunl2}{\def\indexunder{C functions written for lab exercises!Lab exercise 2!}\def\indexcodepost{}}%
+      {ufunl3}{\def\indexunder{C functions written for lab exercises!Lab exercise 3!}\def\indexcodepost{}}%
+      {ufunl4}{\def\indexunder{C functions written for lab exercises!Lab exercise 4!}\def\indexcodepost{}}%
+      {ufunl5}{\def\indexunder{C functions written for lab exercises!Lab exercise 5!}\def\indexcodepost{}}%
+      {ufunl6}{\def\indexunder{C functions written for lab exercises!Lab exercise 6!}\def\indexcodepost{}}%
+      {ufunl7}{\def\indexunder{C functions written for lab exercises!Lab exercise 7!}\def\indexcodepost{}}%
+      {ufunl8}{\def\indexunder{C functions written for lab exercises!Lab exercise 8!}\def\indexcodepost{}}%
+      {matlab}{\def\indexunder{}\def\indexcodepost{}}%
+      {bash}{\def\indexunder{}\def\indexcodepost{}}%
+    }[\def\indexunder{}]%
+  }{%
+    \def\indexunder{#6!}%
+  }%
+  \index{\indexunder#8@\indexformatcode{#7}{#8}\indexcodepost\indexcodess\indexcodepageformat}%
+}
+%% supporting macros for \indexc
+\newcommand{\hyperpagel}[1]{\hyperpage{#1}L}
+\newcommand{\bbb}[1]{\textbf{\hyperpage{#1}}}
+\newcommand{\bbbl}[1]{\textbf{\hyperpagel{#1}}}
+\NewDocumentCommand{\indexformatcode}{%
+  m   % language, e.g. c, matlab, etc.
+  v   % verbatim code
+}{%
+  \mintinline{#1}{#2}%
+}
+
+% For duplicate footnotes on one page
+% https://tex.stackexchange.com/a/35044
+\makeatletter
+\newcommand\footnoteref[1]{\protected@xdef\@thefnmark{\ref{#1}}\@footnotemark}
+\makeatother
+
+% PGF matplotlib figures
+
+\newcommand{\inputpgf}[1]{%
+\begin{tikzpicture}%
+\node[inner sep=0pt] {\input{#1}};%
+\end{tikzpicture}%
+}%
+
+%% matplotlib fix
+\newcommand{\mathdefault}[1][]{}
+
+% Unicode symbols
+
+\newcommand{\unicoder}[1]{{\unicodefont #1}}
+
+% General solutions manual stuff
+
+%% Add S prefix to solutions-only refs
+\ifdefined\issolution
+\makeatletter
+\renewcommand\thesection{S\thechapter.\@arabic\c@section}
+\renewcommand\thetable{S\thechapter.\@arabic\c@table}
+\renewcommand\thefigure{S\thechapter.\@arabic\c@figure}
+\renewcommand\thelisting{S\thechapter.\arabic{listing}} % not working somehow
+\makeatother
+\fi
+
+% Versioning (deprecated)
+
+% \RequirePackage{environ}
+% TS1
+% \newif\iftsone % target system 1
+% \NewEnviron{ts1}[2]{\iftsone\tsref{#1}{#2}\expandafter\BODY\fi}
+% \tsonetrue % set true ... should turn these into make options?
+% \iftsone \def\ts{1} \fi
+% TS2
+% \newif\iftstwo % target system 2
+% \NewEnviron{ts2}[2]{\iftstwo\tsref{#1}{#2}\expandafter\BODY\fi}
+% \iftstwo \def\ts{2} \fi
+
+%% each target system has one or more dev system
+%   with number X.Y with X the target system number
+%   and Y the development system number
+% DS1.1
+% \newif\ifdsonepone % dev system 1.1
+% \NewEnviron{ds1.1}[2]{\ifdsonepone\dsref{#1}{#2}\expandafter\BODY\fi}
+% \dsoneponetrue % set true ... make option?
+% \ifdsonepone \def\ds{1.1} \fi
+% DS1.2
+% \newif\ifdsoneptwo % dev system 1.2
+% \NewEnviron{ds1.2}[2]{\ifdsoneptwo\dsref{#1}{#2}\expandafter\BODY\fi}
+% \ifdsoneptwo \def\ds{1.2} \fi
+% \newif\ifdstwopone % dev system 2.1
+% \NewEnviron{ds2.1}[2]{\ifdstwopone\dsref{#1}{#2}\expandafter\BODY\fi}
+% \ifdsoneptwo \def\ds{2.1} \fi

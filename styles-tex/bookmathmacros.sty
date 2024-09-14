@@ -1,0 +1,127 @@
+\ProvidesPackage{rtcbookmathmacros}
+
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{bm}
+
+\newcommand{\mat}[1]{\bm{#1}}
+\renewcommand*{\vec}[1]{\bm{#1}} % renew because amsmath defines it
+\newcommand{\bnot}[1]{\overline{#1}}
+\newcommand{\band}[2]{#1\bigcdot#2}
+\newcommand{\bor}[2]{#1+#2}
+\newcommand{\bnand}[2]{#1\mathbin{\mathrm{nand}}#2}
+\newcommand{\bnor}[2]{#1\mathbin{\mathrm{nor}}#2}
+\newcommand{\bxor}[2]{#1\mathbin{\mathrm{xor}}#2}
+\newcommand{\bxnor}[2]{#1\mathbin{\mathrm{xnor}}#2}
+
+% a larger \cdot
+\makeatletter
+\newcommand*{\bigcdot}{}% Check if undefined
+\DeclareRobustCommand*{\bigcdot}{%
+  \mathbin{\mathpalette\bigcdot@{}}%
+}
+\newcommand*{\bigcdot@scalefactor}{.5}
+\newcommand*{\bigcdot@widthfactor}{1.15}
+\newcommand*{\bigcdot@}[2]{%
+  % #1: math style
+  % #2: unused
+  \sbox0{$#1\vcenter{}$}% math axis
+  \sbox2{$#1\cdot\m@th$}%
+  \hbox to \bigcdot@widthfactor\wd2{%
+    \hfil
+    \raise\ht0\hbox{%
+      \scalebox{\bigcdot@scalefactor}{%
+        \lower\ht0\hbox{$#1\bullet\m@th$}%
+      }%
+    }%
+    \hfil
+  }%
+}
+\makeatother
+
+\usepackage{xintexpr}
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+\usepackage{steinmetz} % complex number notation, phasors?
+\DeclareMathOperator{\atantwo}{atan_2}
+\DeclareMathOperator{\arctantwo}{arctan_2}
+\DeclareMathOperator{\arctanh}{arctanh}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\adj}{adj}
+\DeclareMathOperator{\Div}{div}
+\DeclareMathOperator{\curl}{curl}
+\DeclareMathOperator{\grad}{grad}
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+\usepackage{xparse}% http://ctan.org/pkg/xparse
+\DeclareDocumentCommand{\Pr}{s m}{% \Pr[*]{..}
+  \operatorname{Pr}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\E}{s m}{% \E[*]{..}
+  \operatorname{E}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\Var}{s m}{% \Var[*]{..}
+  \operatorname{Var}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\Cov}{s m}{% \Cov[*]{..}
+  \operatorname{Cov}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\Cor}{s m}{% \Cor[*]{..}
+  \operatorname{Cor}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\Skew}{s m}{% \Skew[*]{..}
+  \operatorname{Skew}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+\DeclareDocumentCommand{\Kurt}{s m}{% \Kurt[*]{..}
+  \operatorname{Kurt}%
+  \IfBooleanTF{#1}% Condition on *
+    {#2}% Print only the argument in starred * version
+    {\left[#2\right]}% Print bracketed argument [ ] in unstarred version
+}%
+
+\newcommand*\diff{\mathop{}\!d}
+\newcommand*\Diff[1]{\mathop{}\!d^#1}
+
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+
+\usepackage{esint}
+
+\setcounter{MaxMatrixCols}{20} % let bmatrix be up to 20 x 20
+
+%-- vert
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+% \DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\DeclarePairedDelimiterX{\norm}[1]{\lVert}{\rVert}{#1}
+
+% Swap the definition of \abs* and \norm*, so that \abs
+% and \norm resizes the size of the brackets, and the
+% starred version does not.
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+%
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+%-- parallel resistors
+\newcommand{\parallelsum}{\mathbin{\|}}

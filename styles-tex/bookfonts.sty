@@ -1,0 +1,32 @@
+\ProvidesPackage{rtcbookfonts}
+
+\RequirePackage[T1]{fontenc}%
+\usepackage{newpxmath} % math font is Palatino compatible
+\let\Bbbk\relax % so it doesn't clash with amssymb
+\usepackage[no-math]{fontspec}
+\setmainfont{Palatino}
+\setmonofont{Latin Modern Mono}[%
+  % Scale=MatchLowercase, % seems a bit too big
+  Scale=1.05, % a touch smaller than MatchLowercase
+  % UprightFeatures={FakeBold=1.25}, % bolden up the default
+  BoldFont=*,
+  BoldFeatures={FakeBold=2},
+  % LetterSpace=-2, % percent of height ... removed because it messes up monospacing!
+]
+\setsansfont{Helvetica}
+\newfontfamily\unicodefont{DejaVu Sans}% For Unicode symbols
+\def\DejaSans{\unicodefont} % alias for DejaVu Sans
+\newfontfamily\dotmatrixfont{Cash Point Mono}
+\newfontfamily\keypadfont{News Gothic Std}[Scale=0.9]%
+
+\newcommand\vartextvisiblespace[1][.3em]{%
+  \mbox{\kern.1em\vrule height.3ex}%
+  \vbox{\hrule width#1}%
+  \hbox{\vrule height.3ex}
+}
+
+\usepackage{newunicodechar}
+\newunicodechar{‐}{-} % replacing unicode hyphen, which is missing from Palatino, with hyphen-minus
+\newunicodechar{℠}{\textservicemark} % replacing unicode service mark ... doesn't get rid of microtype warning, though
+
+\usepackage{textcomp} % for \textservicemark command

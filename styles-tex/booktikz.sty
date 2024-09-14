@@ -1,0 +1,444 @@
+
+\usepackage{pgf}
+\usepackage{tikz}
+\usepackage{etoolbox}
+\usepackage{pgfplots}
+\usepackage{calc}
+\pgfplotsset{compat=newest}
+\pgfplotsset{
+  table/search path={common-rtcbook,common-rtcbook/figures},
+}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings}
+\usetikzlibrary{arrows}
+\usetikzlibrary{arrows.meta}
+\usepackage{pgfgantt}
+\usetikzlibrary{matrix}
+\usepackage{tkz-euclide}
+
+%% standard tikz styles
+
+\tikzstyle{box}=[draw,line width=1pt,rounded corners=3pt,minimum height=17pt,inner sep=5pt]
+\tikzstyle{edge}=[line width=1pt,->,line cap=round,c1]
+\tikzset{every picture/.style={line width=0.5pt}}% default line width
+\tikzset{every tick/.prefix style={color=black,line width=.5pt,line cap=round},}% default tick
+\tikzset{every axis/.prefix style={grid style={line width=.5pt},}}% default grid
+\tikzset{every axis/.prefix style={axis line style={black,line width=0.5pt},}}% default grid
+
+%% color list
+
+\pgfplotscreateplotcyclelist{mycolorlist}{%
+c1,line width=1pt,line cap=round,line join=round\\%
+c2,line width=1pt,line cap=round,line join=round\\%
+c3,line width=1pt,line cap=round,line join=round\\%
+c4,line width=1pt,line cap=round,line join=round\\%
+c5,line width=1pt,line cap=round,line join=round\\%
+c6,line width=1pt,line cap=round,line join=round\\%
+}
+
+%% custom patterns that can be made cmyk
+
+% \makeatletter
+% \pgfdeclarepatternformonly[\LineSpace]{my north east lines}{\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}{\pgfqpoint{\LineSpace}{\LineSpace}}%
+% {
+%     \pgfsetcolor{\tikz@pattern@color}
+%     \pgfsetlinewidth{0.5pt}
+%     \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+%     \pgfpathlineto{\pgfqpoint{\LineSpace + 0.1pt}{\LineSpace + 0.1pt}}
+%     \pgfusepath{stroke}
+% }
+% \makeatother
+
+% \makeatletter
+% \pgfdeclarepatternformonly[\LineSpace]{my north west lines}{\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}{\pgfqpoint{\LineSpace}{\LineSpace}}%
+% {
+%     \pgfsetcolor{\tikz@pattern@color}
+%     \pgfsetlinewidth{0.5pt}
+%     \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+%     \pgfpathlineto{\pgfqpoint{-\LineSpace - 0.1pt}{\LineSpace + 0.1pt}}
+%     \pgfusepath{stroke}
+% }
+% \makeatother
+% \newdimen\LineSpace
+% \tikzset{
+%     line space/.code={\LineSpace=#1},
+%     line space=3pt
+% }
+
+\makeatletter %new code
+\pgfdeclarepatternformonly[\LineSpace,\tikz@pattern@color]{my north east lines}{\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}{\pgfqpoint{\LineSpace}{\LineSpace}}%
+{
+    \pgfsetcolor{\tikz@pattern@color} %new code
+    \pgfsetlinewidth{0.5pt}
+    \pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+    \pgfpathlineto{\pgfqpoint{\LineSpace + .1pt}{\LineSpace + .1pt}}
+    \pgfusepath{stroke}
+}
+\makeatother %new code
+\newdimen\LineSpace
+\tikzset{
+    line space/.code={\LineSpace=#1},
+    line space=3pt
+}
+
+\makeatletter %new code
+\pgfdeclarepatternformonly[\LineSpace,\tikz@pattern@color]{my north west lines}{\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{\LineSpace}{\LineSpace}}{\pgfqpoint{\LineSpace}{\LineSpace}}%
+{
+    \pgfsetcolor{\tikz@pattern@color} %new code
+    \pgfsetlinewidth{0.5pt}
+    \pgfpathmoveto{\pgfqpoint{\LineSpace + .1pt}{\LineSpace + .1pt}}
+    \pgfpathlineto{\pgfqpoint{0pt}{0pt}}
+    \pgfusepath{stroke}
+}
+\makeatother %new code
+\newdimen\LineSpace
+\tikzset{
+    line space/.code={\LineSpace=#1},
+    line space=3pt
+}
+
+%% root locus pic
+
+\usetikzlibrary{shapes.callouts}%
+\usetikzlibrary{arrows.meta}%
+
+\newcommand\calloutsymbol{+(-2pt,-2pt) rectangle +(2pt,2pt)}
+
+%%% This is to provide the start  point cross marker %
+\tikzset{note/.style={rectangle callout, draw, color=#1,line width=.5pt}}%
+\tikzset{start marker/.pic={\draw[line cap=round] (-#1,-#1) -- (#1,#1) (#1,-#1)--(-#1,#1);}}%
+\tikzset{start marker double/.pic={\draw[line cap=round,yshift=2pt] (-#1,-#1) -- (#1,#1) (#1,-#1)--(-#1,#1);\draw[line cap=round,yshift=-2pt] (-#1,-#1) -- (#1,#1) (#1,-#1)--(-#1,#1);}}%
+
+%%% Root locus
+
+\tikzset{pics/rlocus/.style n args={9}{code={%
+  \begin{axis}[#1,xmin=#2,xmax=#3,ymin=#4,ymax=#5]%
+  \pgfplotstablegetcolsof{#7}% get number of cols
+  \pgfmathsetmacro{\colsmaxindex}{\pgfplotsretval-1}%
+  \pgfmathsetmacro{\maxindex}{\colsmaxindex/2-1}%
+  \foreach\x in{0,...,\maxindex}{% Iterate over the columns of the sets of data
+    \addplot+[] table[x index=\number\numexpr\x*2\relax,y index=\number\numexpr\x*2+1\relax] {#7}% Draw the curves
+    node[draw,circle,inner sep=#6] at (current plot end) {}%
+    pic at (current plot begin) {start marker=#6};%
+  }%
+  \coordinate (rlocusa) at (#8); % callout point
+  \coordinate (rlocusb) at (#9); % callout point
+  \end{axis}%
+}}}
+
+%%% Root locus with double root
+
+%%%% This works both with inline lists and with macros containing lists
+\newcommand*{\GetListMember}[2]{%
+    \def\dotheloop{%
+    \noexpand\foreach \noexpand\a [count=\noexpand\i] in {#1} {%
+        \noexpand\IfEq{\noexpand\i}{#2}{\noexpand\a\noexpand\breakforeach}{}%
+    }}%
+    \dotheloop
+    \par%
+}%
+
+%%%% This is giving undefined \dotheloop and I can't figure out why
+
+\tikzset{pics/rlocusstartmarks/.style n args={9}{code={% can't do >= 9 args so had to fix marker size
+  \begin{axis}[#1,xmin=#2,xmax=#3,ymin=#4,ymax=#5]%
+  \pgfplotstablegetcolsof{#6}% get number of cols
+  \pgfmathsetmacro{\colsmaxindex}{\pgfplotsretval-1}%
+  \pgfmathsetmacro{\maxindex}{\colsmaxindex/2-1}%
+  \foreach\x in{0,...,\maxindex}{% Iterate over the columns of the sets of data
+    \addplot+[] table[x index=\number\numexpr\x*2\relax,y index=\number\numexpr\x*2+1\relax] {#6}% Draw the curves
+    node[draw,circle,inner sep=1.75pt] at (current plot end) {}%
+    pic at (current plot begin) {\GetListMember{#9}{\x+1}=1.75pt};%
+  }%
+  \coordinate (rlocusa) at (#7); % callout point
+  \coordinate (rlocusb) at (#8); % callout point
+  \end{axis}%
+}}}
+
+%% file utilities (https://tex.stackexchange.com/questions/442209/setting-axis-limits-xmin-xmax-ymin-ymax-from-external-dat-file)
+
+% get specific element and store it in a macro
+% #1: table
+% #2: row
+% #3: column (name or [index]<index>)
+% #4: macro for value
+\newcommand*{\GetElement}[4]{%
+    \pgfplotstablegetelem{#2}{#3}\of{#1}%
+    \let#4\pgfplotsretval
+}
+
+%% commutative diagrams
+
+\usepackage{tikz-cd} 
+
+%% tight bounding boxes with bezier curves: https://tex.stackexchange.com/a/632773/56465
+
+\usetikzlibrary{bbox}
+
+%% circuits
+\usepackage[americanvoltages,americancurrents,oldvoltagedirection]{circuitikz}
+\ctikzset{bipoles/thickness=0.75}
+\ctikzset{resistors/thickness=1.25}
+\ctikzset{resistors/scale=0.75}
+% \tikzset{R/.append style={rounded corners=1pt,line cap=round,line join=round}}
+\RequirePackage{etoolbox}
+\makeatletter
+\patchcmd{\pgf@circ@zigzag}{\pgfsetbeveljoin}{\pgfsetroundjoin}
+    {\typeout{Switching to safe resistors!}}
+    {\typeout{Patching resistors failed}}
+\makeatother
+\ctikzset{monopoles/ground/thickness=0.75}
+\ctikzset{grounds/scale=0.75}
+\tikzstyle{wire}=[line width=0.75pt,rounded corners=1pt,line join=round]
+\tikzstyle{on}=[wire,color=c1,line width=1.2pt]
+\tikzstyle{on_}=[on,color=c2]
+\ctikzset{tripoles/mos style/arrows}
+\ctikzset{tripoles/pmos style/nocircle}
+\ctikzset{tripoles/thickness=0.75} % has no effect but it should ... https://github.com/circuitikz/circuitikz/pull/85/commits/ad18c960648bfddc56141978842551f12f905f39 
+% instead use [wire] on node
+\ctikzset{logic ports=ieee,logic ports/scale=0.5}%
+\ctikzset{switches/scale=0.75}%
+\ctikzset{bipoles/cuteswitch/thickness=0.75}% nope
+% \tikzset{cute spdt/.append style={line width=0.75pt,rounded corners=1pt,line cap=round,line join=round}}
+\ctikzset{multipoles/thickness=3}
+\ctikzset{multipoles/external pins thickness=1.3}
+
+\tikzset{%
+bend angle=30,
+branch/.style={=>,thick,postaction={decorate},
+decoration={markings,mark=at position 0.5 with {\arrow{>}}},line cap=round},
+branchnoarrow/.style={=>,thick,line cap=round},
+sourcebranch/.style={thick,postaction={decorate},
+decoration={markings,mark=at position 0.55 with {\arrow{>}}},decoration={mark=at position 0.5 with {\draw circle (10pt);}},line cap=round},
+sourcebranchnoarrow/.style={thick,postaction={decorate},decoration={markings,mark=at position 0.5 with {\draw circle (10pt);}}},
+graphnode/.style={circle,draw=black,fill=lightgray,thick,inner sep=0pt,minimum size=1.5mm,line cap=round},
+groundnode/.pic={%
+  \draw[thick, line cap=round] (-.25,0) -- (.25,0);
+  \draw[thick, line cap=round] (-.15,0) -- ++(-.15,-.15);
+  \draw[thick, line cap=round] (-.05,0) -- ++(-.15,-.15);
+  \draw[thick, line cap=round] (.05,0) -- ++(-.15,-.15);
+  \draw[thick, line cap=round] (.15,0) -- ++(-.15,-.15);
+  \draw[thick, line cap=round] (.25,0) -- ++(-.15,-.15);
+},
+font={\small}%
+}%
+
+%% block diagrams
+\tikzset{
+  summing junction/.style={
+    circle,
+    draw=black,
+    % fill=FlowChartBlue,
+    minimum size=.4cm,
+    path picture={
+      \draw [black]
+        (path picture bounding box.135) -- (path picture bounding box.315)
+        (path picture bounding box.45) -- (path picture bounding box.225);
+    }
+  }
+}
+
+%% mechanical schematics
+
+\tikzstyle{spring}=
+  [
+    % double,
+    thick,
+    decorate,
+    decoration={coil,pre length=0.5cm,post length=0.5cm,segment length=6,amplitude=6}
+  ]
+\tikzstyle{damper}=
+  [
+    thick,
+    decoration=
+      {
+        markings,
+        mark connection node=dmp,
+        mark=at position 0.5 with
+        {
+          \node (dmp) [thick,inner sep=0pt,transform shape,rotate=-90,minimum width=15pt,minimum height=3pt,draw=none] {};
+          \draw [thick] ($(dmp.north east)+(2pt,0)$) -- (dmp.south east) -- (dmp.south west) -- ($(dmp.north west)+(2pt,0)$);
+          \draw [thick] ($(dmp.north)+(0,-5pt)$) -- ($(dmp.north)+(0,5pt)$);
+        }
+      },
+    decorate
+  ]
+
+\tikzstyle{damperreversed}=
+  [
+    thick,
+    decoration=
+      {
+        markings,
+        mark connection node=dmp,
+        mark=at position 0.5 with
+        {
+          \node (dmp) [thick,inner sep=0pt,transform shape,rotate=-90,minimum width=15pt,minimum height=3pt,draw=none] {};
+          \draw [thick] ($(dmp.north west)+(-2pt,0)$) -- (dmp.south west) -- (dmp.south east) -- ($(dmp.north east)+(-2pt,0)$);
+          \draw [thick] ($(dmp.north)+(0,-5pt)$) -- ($(dmp.north)+(0,5pt)$);
+        }
+      },
+    decorate
+  ]
+
+\tikzstyle{dragcup}=
+  [
+    % double,
+    thick,
+    decoration=
+      {
+        markings,
+        mark connection node=dmp,
+        mark=at position 0.5 with
+        {
+          \node (dmp) [inner sep=0pt,transform shape,rotate=-90,minimum width=15pt,minimum height=3pt,draw=none] {};
+          \draw [thick] ($(dmp.north east)+(4pt,0)$) -- (dmp.south east) -- (dmp.south west) -- ($(dmp.north west)+(4pt,0)$);
+          \draw [thick] ($(dmp.north)+(0,-5pt)$) -- ($(dmp.north)+(0,5pt)$);
+          \draw[thick] (0,5pt) -- ++(4pt,0);
+          \draw[thick] (0,-5pt) -- ++(4pt,0);
+        }
+      },
+    decorate
+  ]
+\newcommand{\balloffset}{.75\pgflinewidth}
+\tikzstyle{bearing}=
+  [
+    shaft,
+    decoration=
+      {
+        markings,
+        mark connection node=dmp,
+        mark=at position 0.5 with
+        {
+          \node (dmp) [rectangle,inner sep=0pt,minimum width=.2cm,minimum height=.2cm] {};
+          \node[circle,fill=black,draw,inner sep=0pt,text width=.08cm,anchor=south,line width=.5pt,rounded corners=.5pt] at ($(dmp.north)+(0,-.5pt)$) {};
+          \node[circle,fill=black,draw,inner sep=0pt,text width=.08cm,anchor=north,line width=.5pt,rounded corners=.5pt] at ($(dmp.south)+(0,.5pt)$) {};
+          \node[rectangle,draw,inner sep=0pt,outer sep=0pt,minimum width=.3cm,minimum height=.2cm,fill,pattern=my north east lines,line width=.5pt,rounded corners=.5pt] (upper) at ($(dmp.north)+(0,.18)$) {};
+          \node[rectangle,draw,inner sep=0pt,outer sep=0pt,minimum width=.3cm,minimum height=.2cm,fill,pattern=my north east lines,line width=.5pt,rounded corners=.5pt] (lower) at ($(dmp.south)+(0,-.18)$) {}; 
+          \draw[fill,pattern=my north east lines,draw=none,line width=.5pt,rounded corners=.5pt] ($(lower.south west)+(-.08,0)$) rectangle ($(lower.south east)+(.08,-.2)$);
+          \draw[line width=.5pt,rounded corners=.5pt] ($(lower.south west)+(-.02,0)$) -- ($(lower.south east)+(.02,0)$);
+          \draw[shaft] (-.15cm,0) -- (.15cm,0);
+        }
+      },
+    decorate
+  ]
+\tikzstyle{bearingreversed}=
+  [
+    shaft,
+    decoration=
+      {
+        markings,
+        mark connection node=dmp,
+        mark=at position 0.5 with
+        {
+          \begin{scope}[xscale=-1,yscale=-1]
+          \node (dmp) [rectangle,inner sep=0pt,minimum width=.5cm,minimum height=.2cm] {};
+          \draw ($(dmp)+(.33,-.27)$) coordinate (g1) -- ($(dmp)+(-.33,-.27)$) coordinate (g2); 
+          \draw[fill,pattern=north east lines,draw=none,] (g1) rectangle ($(g2)+(0,-.11)$);
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=south] at ($(dmp.north)+(0,-\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=south] at ($(dmp.north)+(-.08,-\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=south] at ($(dmp.north)+(-.08*2,-\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=south] at ($(dmp.north)+(.08,-\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=south] at ($(dmp.north)+(.08*2,-\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=north] at ($(dmp.south)+(0,\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=north] at ($(dmp.south)+(-.08,\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=north] at ($(dmp.south)+(-.08*2,\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=north] at ($(dmp.south)+(.08,\balloffset)$) {};
+          \node[circle,draw,inner sep=0pt,text width=.08cm,anchor=north] at ($(dmp.south)+(.08*2,\balloffset)$) {};
+          \node[rectangle,draw,inner sep=0pt,outer sep=0pt,minimum width=.5cm,minimum height=.08cm,fill,pattern=north east lines] at ($(dmp.north)+(0,.12)$) {};
+          \node[rectangle,draw,inner sep=0pt,outer sep=0pt,minimum width=.5cm,minimum height=.08cm,fill,pattern=north east lines] at ($(dmp.south)+(0,-.12)$) {};
+          \draw[shaft] (.29cm,0) -- (-.29cm,0);
+          \end{scope}
+        }
+      },
+    decorate
+  ]
+\tikzstyle{shaft}=
+  [
+    thick,double,double distance=4pt
+  ]
+\tikzstyle{shaftcap}=
+  [
+    thick,double,double distance=4pt,line cap=rect,shorten >=2pt,shorten <=2pt,rounded corners=.5pt
+  ]
+\tikzstyle{inertia}=
+  [
+    rectangle,draw,thick,minimum width=.5cm,minimum height=1.5cm,rounded corners=.5pt
+  ]
+\newcommand{\AxisRotator}[1][rotate=0]{%
+    \tikz [x=0.2cm,y=0.4cm,thick,-stealth,#1]
+    \draw[line cap=round,inner sep=0pt,outer sep=0pt] (0,0) arc (330:30:1 and 1) node[midway,rectangle,draw,minimum width=.55cm,minimum height=.2cm,color=black,fill=white,anchor=west,xshift=-2pt,thin]{};%
+}
+
+\tikzset{
+  motor/.pic={%
+    \node[rectangle,draw,thick,inner sep=0pt,minimum width=1.33cm,minimum height=.5cm,rounded corners=1pt] (-body) at (0,0) {motor};
+    \draw[thick,line cap=round,rounded corners=.5pt] ($(-body.south west)+(.05,0)$) -- ++(-.05,-.05) coordinate (g1west)
+    -- ($(-body.south east)+(0,-.05)$)  coordinate (g1east)
+    -- ($(-body.south east)+(-.05,0)$);
+    \draw[fill,pattern=north east lines,draw=none,] (g1east) rectangle ($(g1west)+(0,-.11)$);
+    \draw[red] ($(-body.north)+(-.035,0)$) -- ++(0,.2) node[inner sep=1pt,anchor=east] {\scriptsize\bfseries $+$};
+    \draw[] ($(-body.north)+(.035,0)$) -- ++(0,.2) node[inner sep=1pt,anchor=west] {\scriptsize\bfseries $-$};
+  },
+}
+
+%% 3D objects
+
+\usetikzlibrary{shapes.geometric}
+
+\makeatletter
+\begingroup
+% new anchor `end` for shape `cylinder`
+\def\pgf@sm@shape@name{cylinder}
+
+% the same as `\pgfdeclareshape{cylinder}{... \anchor{end top} ...}
+\pgf@sh@anchor{end}{%
+  \getcylinderpoints
+  \pgfmathrotatepointaround{%
+    \pgfpointadd{%
+      \beforetop
+      \pgf@y=0pt\relax
+      \advance\pgf@x-\xradius
+    }{\centerpoint}%
+  }{\centerpoint}{\rotate}%
+}
+\endgroup
+\makeatother
+
+% binary number representation
+
+\ExplSyntaxOn
+\NewExpandableDocumentCommand{\pbinary}{O{4}m}
+ {% #1 = optional number of digits, default 4
+  % #2 = integer to convert
+  \grandfleet_binary:nn { #1 } { #2 }
+ }
+
+\cs_new:Nn \grandfleet_binary:nn
+ {
+  \prg_replicate:nn
+   {
+    \int_max:nn { 0 } { #1 - \str_count:f { \int_to_bin:n { #2 } } }
+   }
+   { 0 }
+  \int_to_bin:n { #2 }
+ }
+\cs_generate_variant:Nn \str_count:n { f }
+\ExplSyntaxOff
+
+% get x y coordinates of coordinate
+
+\makeatletter
+\newcommand{\gettikzxy}[3]{%
+  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  \edef#2{\the\pgf@x}%
+  \edef#3{\the\pgf@y}%
+}
+\makeatother
+
+% overdraw line background
+\tikzset{
+  overdraw/.style={preaction={draw,bgcolor,line width=#1}},%
+  overdraw/.default=2pt%
+}
+\colorlet{bgcolor}{white}%

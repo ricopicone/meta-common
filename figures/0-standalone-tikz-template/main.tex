@@ -1,0 +1,15 @@
+\documentclass[tikz,crop,dvipsnames,svgnames,convert=pdf2svg]{standalone}%
+\ifstandalone%
+  \usepackage{../0-standalone-tikz-fonts}%
+  \usepackage{../0-standalone-other}%
+\fi%
+\begin{document} % no blank lines after this!%
+\tikzset{font={\fontsize{8pt}{9}\selectfont}}%
+\usetikzlibrary{calc,positioning,fit}%
+\tikzstyle{box}=[draw,line width=1pt,rounded corners=3pt,minimum height=17pt,inner sep=5pt]%
+\tikzstyle{edge}=[line width=1pt,->,line cap=round,c1]%
+\begin{tikzpicture}%
+  \draw (0,0) -- (1,1);%
+  %%%
+\end{tikzpicture}%
+\end{document}%
