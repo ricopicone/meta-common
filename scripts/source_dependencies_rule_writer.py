@@ -19,7 +19,8 @@ with source_dependencies_json.open() as f:
 with source_dependencies_mk.open('w') as f:
     f.write('# Source dependencies\n')
     for target, dep in data.items():
-        target_tex = f'($commondir)/versioned/{target}/index.tex'
-        target_html = f'($commondir)/versioned/{target}/index.html'
+        target_tex = f'$(commondir)/versioned/{target}/index.tex'
+        target_html = f'$(commondir)/versioned/{target}/index.html'
         dependencies = f'source/{dep}/main.py source/{dep}/main.md'
         f.write(f'{target_tex}: {dependencies}\n')
+        f.write(f'{target_html}: {dependencies}\n')
