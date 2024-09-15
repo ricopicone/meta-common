@@ -533,31 +533,40 @@ local function headerer_html(el)
   -- 4. add video container div
   local playlist = videos[text_version]['playlist']
   local index = videos[text_version]['indices'][h]
-  if playlist and index then
-    -- r[#r+1] = pandoc.Div({pandoc.RawInline('html','<iframe class="hiddeniframe" src="https://www.youtube.com/embed?listType=playlist&list=PL'..playlist..'&index='..index..'" frameborder="0" allowfullscreen="" allow="encrypted-media"></iframe>')},{class='video-container hiddenvideo-container'})
-    local button = '<button class="button1" onclick="toggle_video_visibility(this)"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 29"><defs><style>.a{fill:#fff;}</style></defs><rect width="36" height="29" rx="2.19"/><polygon class="a" points="24.17 14.5 14.17 8.73 14.17 20.27 24.17 14.5"/><rect class="a" x="17" y="1" width="2" height="4"/><rect class="a" x="20" y="1" width="2" height="4"/><rect class="a" x="23" y="1" width="2" height="4"/><rect class="a" x="26" y="1" width="2" height="4"/><rect class="a" x="29" y="1" width="2" height="4"/><rect class="a" x="32" y="1" width="2" height="4"/><rect class="a" x="14" y="1" width="2" height="4"/><rect class="a" x="11" y="1" width="2" height="4"/><rect class="a" x="8" y="1" width="2" height="4"/><rect class="a" x="5" y="1" width="2" height="4"/><rect class="a" x="2" y="1" width="2" height="4"/><rect class="a" x="17" y="24" width="2" height="4"/><rect class="a" x="20" y="24" width="2" height="4"/><rect class="a" x="23" y="24" width="2" height="4"/><rect class="a" x="26" y="24" width="2" height="4"/><rect class="a" x="29" y="24" width="2" height="4"/><rect class="a" x="32" y="24" width="2" height="4"/><rect class="a" x="14" y="24" width="2" height="4"/><rect class="a" x="11" y="24" width="2" height="4"/><rect class="a" x="8" y="24" width="2" height="4"/><rect class="a" x="5" y="24" width="2" height="4"/><rect class="a" x="2" y="24" width="2" height="4"/></svg> <span class="video-hover-text">Watch Lecture Video</span> </button>'
-    local buttons = ''
-    if type(index) == 'table' then
-      for i, idx in ipairs(index) do
-        buttons = buttons .. button
-      end
-    else
-      buttons = button
-    end
-    r[#r+1] = pandoc.Div({pandoc.RawInline('html',buttons)},{class='video-container hiddenvideo-container'})
-    r[#r].attr.attributes['data-embedplaylist'] = playlist
-    local count = 0
-    if type(index) == 'table' then
-      for i, idx in ipairs(index) do
-        r[#r].attr.attributes['data-embedindex'..i] = idx
-        count = count + 1
-      end
-      r[#r].attr.attributes['data-embedcount'] = count
-    else
-      r[#r].attr.attributes['data-embedindex1'] = index
-      r[#r].attr.attributes['data-embedcount'] = 1
-    end
+  -- if playlist and index then
+  -- r[#r+1] = pandoc.Div({pandoc.RawInline('html','<iframe class="hiddeniframe" src="https://www.youtube.com/embed?listType=playlist&list=PL'..playlist..'&index='..index..'" frameborder="0" allowfullscreen="" allow="encrypted-media"></iframe>')},{class='videopdf-container hiddenvideopdf-container'})
+  local novideo = false
+  if not playlist or not index then
+    novideo = true
   end
+  local button
+  if novideo then
+    button = ''
+  else
+    button = '<button class="button1" onclick="toggle_video_visibility(this)"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 29"><defs><style>.a{fill:#fff;}</style></defs><rect width="36" height="29" rx="2.19"/><polygon class="a" points="24.17 14.5 14.17 8.73 14.17 20.27 24.17 14.5"/><rect class="a" x="17" y="1" width="2" height="4"/><rect class="a" x="20" y="1" width="2" height="4"/><rect class="a" x="23" y="1" width="2" height="4"/><rect class="a" x="26" y="1" width="2" height="4"/><rect class="a" x="29" y="1" width="2" height="4"/><rect class="a" x="32" y="1" width="2" height="4"/><rect class="a" x="14" y="1" width="2" height="4"/><rect class="a" x="11" y="1" width="2" height="4"/><rect class="a" x="8" y="1" width="2" height="4"/><rect class="a" x="5" y="1" width="2" height="4"/><rect class="a" x="2" y="1" width="2" height="4"/><rect class="a" x="17" y="24" width="2" height="4"/><rect class="a" x="20" y="24" width="2" height="4"/><rect class="a" x="23" y="24" width="2" height="4"/><rect class="a" x="26" y="24" width="2" height="4"/><rect class="a" x="29" y="24" width="2" height="4"/><rect class="a" x="32" y="24" width="2" height="4"/><rect class="a" x="14" y="24" width="2" height="4"/><rect class="a" x="11" y="24" width="2" height="4"/><rect class="a" x="8" y="24" width="2" height="4"/><rect class="a" x="5" y="24" width="2" height="4"/><rect class="a" x="2" y="24" width="2" height="4"/></svg> <span class="video-hover-text">Watch Lecture Video</span> </button>'
+  end
+  local buttons = ''
+  if type(index) == 'table' then
+    for i, idx in ipairs(index) do
+      buttons = buttons .. button
+    end
+  else
+    buttons = button
+  end
+  r[#r+1] = pandoc.Div({pandoc.RawInline('html',buttons)},{class='videopdf-container hiddenvideopdf-container'})
+  r[#r].attr.attributes['data-embedplaylist'] = playlist
+  local count = 0
+  if type(index) == 'table' then
+    for i, idx in ipairs(index) do
+      r[#r].attr.attributes['data-embedindex'..i] = idx
+      count = count + 1
+    end
+    r[#r].attr.attributes['data-embedcount'] = count
+  else
+    r[#r].attr.attributes['data-embedindex1'] = index
+    r[#r].attr.attributes['data-embedcount'] = 1
+  end
+  -- end
   -- 5. add a real-section class (this simplifies the css and js)
   r[1].classes:insert('real-section')
   return r
