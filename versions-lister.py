@@ -175,9 +175,15 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                 elif (k == 'general'):
                     continue # just info, signifying elsewhere
                 elif not (k == 'name') and not (k == 'kind') and not (k == 'description') and not (k == 'hash') and not (k == 'variants') and not (k == 'url'):
-                    lines[edition][lines_key].append(f'{indent}\\item {capfirst(k)}')
-                    lines[edition][lines_key].append(f': {capfirst(v)}\n')
+                    if v.startswith('`'):
+                        v = v.replace('`','') # strip delimiter
+                        lines[edition][lines_key].append(f'{indent}\\item {capfirst(k)}')
+                        lines[edition][lines_key].append(f': \\mintinline{{matlab}}{{{v}}}\n')
+                    else:
+                        lines[edition][lines_key].append(f'{indent}\\item {capfirst(k)}')
+                        lines[edition][lines_key].append(f': {capfirst(v)}\n')
             elif type(v) is list and len(v) > 0:
+                print(f'k: {k}')
                 if k == 'variables':
                     if len(ts_version) > 0:
                         summary = f'Variables (different for each specific {ts_version} system—see \\cref{{ef}})'
@@ -189,7 +195,12 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                 if v:
                     lines[edition][lines_key].append(f'{indent}\\begin{{enumerate}}\n')
                 for li in v:
-                    lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(li)}')
+                    if k+'-descriptions' in versions_here:
+                        lines[edition][lines_key].append(f"\n{indent}\\item {capfirst(li).replace('-',' ')}: {versions_here[k+'-descriptions'][li]}")
+                        if k+'-names' in versions_here and li in versions_here[k+'-names']:
+                            lines[edition][lines_key].append(f", given the code variable name \\mintinline{{matlab}}{{{versions_here[k+'-names'][li].replace('`','')}}}")
+                    else:
+                        lines[edition][lines_key].append(f"\n{indent}\\item {capfirst(li)}")
                 if v:
                     lines[edition][lines_key].append(f'{indent}\\end{{enumerate}}\n')
             elif (type(v) is dict) and not (k == 'variants'):
@@ -208,7 +219,7 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                         em = ''
                         if 'emulation' in v:
                             if (v['emulation'] == 'yes'):
-                                em = '(software emulation support)'
+                                em = ' (software emulation support)'
                                 # em = '<div class="tooltip"><div data-md-tooltip="has software emulation support"><span class="fa-solid fa-laptop-code"></span><span class="fa-solid fa-check"></span></div></div>'
                             else:
                                 em = ''
@@ -226,14 +237,14 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                                 if 'name' in v:
                                     if 'kind' in v:
                                         if 'description' in v:
-                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])} {em} {label}\\\\ {v["description"]}')
+                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])}{em}. {label} {v["description"]}')
                                         else:
-                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])} {em} {label}')
+                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])}{em} {label}')
                                     else:
                                         lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["name"])} {label} {em}')
                                 else:
                                     if 'url' in v:
-                                        lines[edition][lines_key].append(f'\n{indent}{capfirst(k)}\\myurlinline{{{v["url"]}}}{{{v["hash"]}}} ({em}) {label}')
+                                        lines[edition][lines_key].append(f'\n{indent}{capfirst(k)}\\myurlinline{{{v["url"]}}}{{{v["hash"]}}}{em} {label}')
                                     else:
                                         lines[edition][lines_key].append(f'\n{indent}{capfirst(k)} ({em})')
                                 enumerater_general_tex(v,lines,lines_key,edition,depth+1,old_depth=depth,skip=skip,general=general,ts_version=ts_version)
@@ -241,9 +252,9 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                                 if 'name' in v:
                                     if 'kind' in v:
                                         if 'description' in v:
-                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])} {em} {label}\\\\ {v["description"]}')
+                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])}{em}. {label} {v["description"]}')
                                         else:
-                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])} {em} {label}')
+                                            lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])}{em} {label}')
                                     else:
                                         lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["name"])} {em} {label}')
                                 else:
@@ -255,19 +266,19 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
 headings = OrderedDict()
 headings = {
     'target-computer': {
-        'name': 'Target computer',
+        'name': 'target computer',
         'hash': 'a6'
     },
     'ui': {
-        'name': 'User interface (UI) subsystem',
+        'name': 'user interface subsystem',
         'hash': 'y6'
     },
     'electromechanical-subsystem': {
-        'name': 'Electromechanical subsystem',
+        'name': 'electromechanical subsystem',
         'hash': 'lf'
     },
     'prototyping': {
-        'name': 'Prototyping and testing hardware',
+        'name': 'prototyping and testing hardware',
         'hash': 'wi'
     }
 }
@@ -293,9 +304,9 @@ for k1,v1 in versions.items():
 ## General {k1} target system {{#general-target-system-{k1} .ts .{k1} h="wp"}}\n
 This section includes a definition of the general {k1} target system. 
 For specific hardware instances, see 
-[Specific {k1} target systems](#specific-target-systems-{k1}) below. 
+[Specific {k1} target systems](#specific-target-systems-{k1}). 
 The general {k1} target system diagram is shown in [@fig:system-diagram-0-target-system-{k1}].\n
-![The general {k1} target system diagram. Subsystems are in bold-face.](figures/system-diagram-target-{k1}/system-diagram-target-{k1}){{#fig:system-diagram-0-target-system-{k1} .figure .standalone}}\n
+![The general {k1} target system diagram. Subsystems are in bold.](figures/system-diagram-target-{k1}/system-diagram-target-{k1}){{#fig:system-diagram-0-target-system-{k1} .figure .standalone}}\n
 We define the general {k1} target system as follows.''')
         for h,hv in headings.items():
             if h in versions[k1].keys():
@@ -357,12 +368,12 @@ for edition,vedition in bookdefs['editions'].items():
         \\section[][ts][]{{general-target-system{k1}}}{{wp}}{{General {k1} target system}}\n\n
         \\myindex[start]{{Target system!general}}\n
         This section includes a definition of the general {k1} target system. 
-        For specific hardware instances, see \\cref{{ef}} below. 
+        For specific hardware instances, see \\cref{{ef}}. 
         The general {k1} target system diagram is shown in \\cref{{fig:system-diagram-0-target-system-{k1}}}.\n\n
-        \\begin{{figure}}\n
+        \\begin{{figure}}[H]\n
         \\centering\n
         \\includestandalone{{figures/system-diagram-target-{k1}/system-diagram-target-{k1}}}\n
-        \\figcaption[color=color][nofloat]{{fig:system-diagram-0-target-system-{k1}}}{{The general {k1} target system diagram. Subsystems are in bold-face.}}\n
+        \\figcaption[color=color][nofloat]{{fig:system-diagram-0-target-system-{k1}}}{{The general {k1} target system diagram. Subsystems are in bold.}}\n
         \\end{{figure}}\n\n
         We define the general {k1} target system as follows.''')
                 for h,hv in headings.items():
@@ -373,7 +384,7 @@ for edition,vedition in bookdefs['editions'].items():
                         else:
                             label = ''
                         if type(versions[k1][h]) is str:
-                            lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}}} \n\n{label}\n\n\\begin{{enumerate}}\n')
+                            lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}}} \n\n{label}\n\nThe {hv["name"]} includes the following components:\n\\begin{{enumerate}}\n')
                             lines[edition][k1].append(f'{versions[k1][h]}.\n\n')
                         elif type(versions[k1][h]) is dict:
                             if h == 'target-computer':
@@ -384,14 +395,14 @@ for edition,vedition in bookdefs['editions'].items():
                             if 'name' in versions[k1][h]:
                                 if 'description' in versions[k1][h]:
                                     if 'kind' in versions[k1][h]:
-                                        lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["kind"]}, {versions[k1][h]["name"]} {label}}}\n\n{versions[k1][h]["description"]}\n\n{deets}\n\n\\begin{{enumerate}}\n')
+                                        lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["kind"]}, {versions[k1][h]["name"]} {label}}}\n\n{versions[k1][h]["description"]}\n\nThe {versions[k1][h]["name"]} includes the following components:\n{deets}\n\n\\begin{{enumerate}}\n')
                                     else:
-                                        lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["name"]} {label}}}\n\n{versions[k1][h]["description"]}\n\n{deets}\n\n\\begin{{enumerate}}\n')
+                                        lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["name"]} {label}}}\n\n{versions[k1][h]["description"]}\n{deets}\n\nThe {versions[k1][h]["name"]} includes the following features:\n\\begin{{enumerate}}\n')
                                 else:
-                                    lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["name"]} {label}}}\n\n{deets}\n\n\\begin{{enumerate}}\n')
+                                    lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]}: {versions[k1][h]["name"]} {label}}}\n\n{deets}\n\nThe {versions[k1][h]["name"]} includes the following components:\n\\begin{{enumerate}}\n')
                             else:
-                                lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]} {label}}}\n\n{deets}\n\n\\begin{{enumerate}}\n')
-                            lines = enumerater_general_tex(versions[k1][h],lines,k1,edition,depth=0,skip=["specific","suppliers","quantity","unspecific"],general=True,ts_version=k1)
+                                lines[edition][k1].append(f'\n\n\\subsection[][ts][]{{{h}}}{{{hv["hash"]}}}{{{hv["name"]} {label}}}\n\n{deets}\n\nThe {hv["name"]} includes the following components:\n\\begin{{enumerate}}\n')
+                            lines = enumerater_general_tex(versions[k1][h],lines,k1,edition,depth=0,skip=["specific","suppliers","quantity","unspecific","variables-descriptions","variables-names"],general=True,ts_version=k1)
                             # if h == 'target-computer':
                             #     lines[edition][k1].append('\n\\end{enumerate}\n')
                 lines[edition][k1].append('\n\n\\myindex[stop]{Target system!general}\n\n\\myindex{Target system!specific}\n')
@@ -428,7 +439,7 @@ for k in tss:
             supsup = '[^suppliers]'
         else:
             supsup = '<sup>1</sup>'
-        lines[edition][k].append(f'''\n\n
+        lines[edition][k].append(f'''\n\n\\clearpage\n\n
 # Specific {versions[k]["ts"]} target systems {{#specific-target-systems-{versions[k]["ts"]} id="specific-target-systems-{versions[k]["ts"]}" .online-only .ts .{versions[k]["ts"]} h="ef"}}
 This section includes specific hardware instances of the general {versions[k]["ts"]} 
 target system above ([General {versions[k]["ts"]} target system](#general-target-system-{versions[k]["ts"]})). 
@@ -443,11 +454,11 @@ All hardware is specified, including some suppliers we like.{supsup}''')
         if s == 'target-computer':
             sname = 'Target computer'
         elif s == 'ui':
-            sname = 'User interface (UI) subsystem'
+            sname = 'user interface (UI) subsystem'
         elif s == 'electromechanical-subsystem':
             sname = 'Electromechanical subsystem'
         elif s == 'prototyping':
-            sname = 'Prototyping and testing hardware'
+            sname = 'Prototyping and testing hardware subsystem'
         lines[edition][k].append(f'\n\n### {sname}\n\n')
         sd = versions[k][s]
         if isinstance(sd,str):
@@ -594,12 +605,12 @@ for k1,v1 in versions.items():
 ## General {k1} development system {{#general-development-system-{k1} .ts .{k1} h="2b"}}\n
 This section includes a definition of the general {k1} development system. 
 For specific hardware instances, see 
-[Specific {k1} development systems](#specific-development-systems-{k1}) below. 
+[Specific {k1} development systems](#specific-development-systems-{k1}). 
 The general {k1} development system diagram is shown in [@fig:system-diagram-0-development-system-{k1}].\n
 ![The general {k1} development system diagram.](figures/system-diagram-development-{k1}/system-diagram-development-{k1}){{#fig:system-diagram-0-development-system-{k1} .figure .standalone}}\n
-We define the general {k1} development system as follows. It consists of a development computer, a virtual machine hypervisor, and the {versions[k1]["ide"]} IDE.\n
+We define the general {k1} development system as follows. It consists of a development computer, a virtual machine (VM), and the {versions[k1]["ide"]}.\n
 For specific instances of the {k1} development system, see 
-[Specific {k1} development systems](#specific-development-systems-{k1}) below.''')
+[Specific {k1} development systems](#specific-development-systems-{k1}).''')
 
 ### save markdown/html general version
 iv = 0;
@@ -631,16 +642,17 @@ for edition,vedition in bookdefs['editions'].items():
         \\section[][ds][]{{general-development-system{k1}}}{{dm}}{{General {k1} development system}}\n
         \\myindex[start]{{Development system!general}}\n
         This section includes a definition of the general {k1} development system. 
-        For specific hardware instances, see \\cref{{uh}} below. 
+        For specific hardware instances, see \\cref{{uh}}. 
         The general {k1} development system diagram is shown in \\cref{{fig:system-diagram-0-development-system-{k1}}}.\n\n
-        \\begin{{center}}\n
+        \\begin{{figure}}[H]\n
+        \\centering
         \\includestandalone{{figures/system-diagram-development-{k1}/system-diagram-development-{k1}}}\n
         \\figcaption[color=bw][nofloat]{{fig:system-diagram-0-development-system-{k1}}}{{The general {k1} development system diagram.}}\n
-        \\end{{center}}\n\n
+        \\end{{figure}}\n\n
         We define the general {k1} development system as follows.
-        It consists of a development computer, a virtual machine hypervisor, and the {versions[k1]["ide"]} IDE.\n
+        It consists of a development computer, a virtual machine hypervisor, and the {versions[k1]["ide"]}.\n
         For specific instances of the {k1} development system, see 
-        \\cref{{uh}} below.\n\n
+        \\cref{{uh}}.\n\n
         \\myindex[stop]{{Development system!general}}\n\n
         \\myindex{{Development system!specific}}\n
         ''')

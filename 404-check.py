@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(
     description = 'Checks all links for 404 errors.',
 )
 
-default_file = Path(__file__).parent / "book-json" / "book-0-cleaned.json"
+default_file = Path(__file__).parent / "book-json" / "book-hp1-cleaned.json"
 parser.add_argument('filename', nargs="?", default=default_file, help="the file to check links in")
 parser.add_argument('-v', '--verbose', action="store_true", help="show verbose info")
 
