@@ -254,9 +254,10 @@ local function subsection_titler(el,h)
     pandoc.RawInline('html',
       start_text .. 
       " <a href='/'><em>" .. 
-      book_def["book-short-name"] .. 
-      "</em></a>, p. " .. 
-      book[h]['p']
+      book_def["book-short-name"] ..
+      -- "</em></a>, p. " .. 
+      -- book[h]['p']
+      "</em></a>"
     )
   },{class="subsection-subtitle"})
 end
@@ -531,40 +532,42 @@ local function headerer_html(el)
     error()
   end
   -- 4. add video container div
-  local playlist = videos[text_version]['playlist']
-  local index = videos[text_version]['indices'][h]
-  -- if playlist and index then
-  -- r[#r+1] = pandoc.Div({pandoc.RawInline('html','<iframe class="hiddeniframe" src="https://www.youtube.com/embed?listType=playlist&list=PL'..playlist..'&index='..index..'" frameborder="0" allowfullscreen="" allow="encrypted-media"></iframe>')},{class='videopdf-container hiddenvideopdf-container'})
-  local novideo = false
-  if not playlist or not index then
-    novideo = true
-  end
-  local button
-  if novideo then
-    button = ''
-  else
-    button = '<button class="button1" onclick="toggle_video_visibility(this)"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 29"><defs><style>.a{fill:#fff;}</style></defs><rect width="36" height="29" rx="2.19"/><polygon class="a" points="24.17 14.5 14.17 8.73 14.17 20.27 24.17 14.5"/><rect class="a" x="17" y="1" width="2" height="4"/><rect class="a" x="20" y="1" width="2" height="4"/><rect class="a" x="23" y="1" width="2" height="4"/><rect class="a" x="26" y="1" width="2" height="4"/><rect class="a" x="29" y="1" width="2" height="4"/><rect class="a" x="32" y="1" width="2" height="4"/><rect class="a" x="14" y="1" width="2" height="4"/><rect class="a" x="11" y="1" width="2" height="4"/><rect class="a" x="8" y="1" width="2" height="4"/><rect class="a" x="5" y="1" width="2" height="4"/><rect class="a" x="2" y="1" width="2" height="4"/><rect class="a" x="17" y="24" width="2" height="4"/><rect class="a" x="20" y="24" width="2" height="4"/><rect class="a" x="23" y="24" width="2" height="4"/><rect class="a" x="26" y="24" width="2" height="4"/><rect class="a" x="29" y="24" width="2" height="4"/><rect class="a" x="32" y="24" width="2" height="4"/><rect class="a" x="14" y="24" width="2" height="4"/><rect class="a" x="11" y="24" width="2" height="4"/><rect class="a" x="8" y="24" width="2" height="4"/><rect class="a" x="5" y="24" width="2" height="4"/><rect class="a" x="2" y="24" width="2" height="4"/></svg> <span class="video-hover-text">Watch Lecture Video</span> </button>'
-  end
-  local buttons = ''
-  if type(index) == 'table' then
-    for i, idx in ipairs(index) do
-      buttons = buttons .. button
+  if videos[text_version] then
+    local playlist = videos[text_version]['playlist']
+    local index = videos[text_version]['indices'][h]
+    -- if playlist and index then
+    -- r[#r+1] = pandoc.Div({pandoc.RawInline('html','<iframe class="hiddeniframe" src="https://www.youtube.com/embed?listType=playlist&list=PL'..playlist..'&index='..index..'" frameborder="0" allowfullscreen="" allow="encrypted-media"></iframe>')},{class='videopdf-container hiddenvideopdf-container'})
+    local novideo = false
+    if not playlist or not index then
+      novideo = true
     end
-  else
-    buttons = button
-  end
-  r[#r+1] = pandoc.Div({pandoc.RawInline('html',buttons)},{class='videopdf-container hiddenvideopdf-container'})
-  r[#r].attr.attributes['data-embedplaylist'] = playlist
-  local count = 0
-  if type(index) == 'table' then
-    for i, idx in ipairs(index) do
-      r[#r].attr.attributes['data-embedindex'..i] = idx
-      count = count + 1
+    local button
+    if novideo then
+      button = ''
+    else
+      button = '<button class="button1" onclick="toggle_video_visibility(this)"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 29"><defs><style>.a{fill:#fff;}</style></defs><rect width="36" height="29" rx="2.19"/><polygon class="a" points="24.17 14.5 14.17 8.73 14.17 20.27 24.17 14.5"/><rect class="a" x="17" y="1" width="2" height="4"/><rect class="a" x="20" y="1" width="2" height="4"/><rect class="a" x="23" y="1" width="2" height="4"/><rect class="a" x="26" y="1" width="2" height="4"/><rect class="a" x="29" y="1" width="2" height="4"/><rect class="a" x="32" y="1" width="2" height="4"/><rect class="a" x="14" y="1" width="2" height="4"/><rect class="a" x="11" y="1" width="2" height="4"/><rect class="a" x="8" y="1" width="2" height="4"/><rect class="a" x="5" y="1" width="2" height="4"/><rect class="a" x="2" y="1" width="2" height="4"/><rect class="a" x="17" y="24" width="2" height="4"/><rect class="a" x="20" y="24" width="2" height="4"/><rect class="a" x="23" y="24" width="2" height="4"/><rect class="a" x="26" y="24" width="2" height="4"/><rect class="a" x="29" y="24" width="2" height="4"/><rect class="a" x="32" y="24" width="2" height="4"/><rect class="a" x="14" y="24" width="2" height="4"/><rect class="a" x="11" y="24" width="2" height="4"/><rect class="a" x="8" y="24" width="2" height="4"/><rect class="a" x="5" y="24" width="2" height="4"/><rect class="a" x="2" y="24" width="2" height="4"/></svg> <span class="video-hover-text">Watch Lecture Video</span> </button>'
     end
-    r[#r].attr.attributes['data-embedcount'] = count
-  else
-    r[#r].attr.attributes['data-embedindex1'] = index
-    r[#r].attr.attributes['data-embedcount'] = 1
+    local buttons = ''
+    if type(index) == 'table' then
+      for i, idx in ipairs(index) do
+        buttons = buttons .. button
+      end
+    else
+      buttons = button
+    end
+    r[#r+1] = pandoc.Div({pandoc.RawInline('html',buttons)},{class='videopdf-container hiddenvideopdf-container'})
+    r[#r].attr.attributes['data-embedplaylist'] = playlist
+    local count = 0
+    if type(index) == 'table' then
+      for i, idx in ipairs(index) do
+        r[#r].attr.attributes['data-embedindex'..i] = idx
+        count = count + 1
+      end
+      r[#r].attr.attributes['data-embedcount'] = count
+    else
+      r[#r].attr.attributes['data-embedindex1'] = index
+      r[#r].attr.attributes['data-embedcount'] = 1
+    end
   end
   -- end
   -- 5. add a real-section class (this simplifies the css and js)
@@ -747,6 +750,83 @@ local function citer(el)
   end
 end
 
+-- Define a function that returns a value from a book json file given the edition, hash, and key
+local function book_value(ed,h,key)
+  if book[ed] then
+    if book[ed][h] then
+      return book[ed][h][key]
+    end
+  end
+  return ""
+end
+
+-- Define a function that returns a formatted hash from its type from a book json file given the edition and hash
+local function formatted_hashref(ed,h)
+  local type = book_value(ed,h,'type')
+  if type == 'chapter' then
+    return 'chapter ' .. book_value(ed,h,'ch')
+  elseif type == 'appendix' then
+    return 'appendix ' .. book_value(ed,h,'ch')
+  elseif type == 'section' then
+    return 'section ' .. book_value(ed,h,'sec')
+  elseif type == 'subsection' then
+    return 'subsection ' .. book_value(ed,h,'subsec')
+  elseif type == 'lab' then
+    return 'lab ' .. book_value(ed,h,'ch')
+  elseif type == 'resource' then
+    return 'resource ' .. book_value(ed,h,'sec')
+  elseif type == 'example' then
+    return 'the example' -- really should add the example number, but it's not in the json at this point
+  elseif type == 'figure' then
+    return 'figure ' .. book_value(ed,h,'number')
+  elseif type == 'table' then
+    return 'table ' .. book_value(ed,h,'number')
+  elseif type == 'problem' then
+    return 'problem ' .. book_value(ed,h,'problem-num')
+  elseif type == 'labproblem' then
+    return 'problem ' .. book_value(ed,h,'problem-num')
+  else
+    return ''
+  end
+end
+
+-- Define a function to split a string into a table of strings based on a delimiter
+local function split(s, delimiter)
+  local result = {}
+  for match in (s..delimiter):gmatch("(.-)"..delimiter) do
+    table.insert(result, match)
+  end
+  return result
+end
+
+-- Define a function to handle the case where a hashref is a list of hashes
+local function multihashref(el)
+  -- Really, a more involved function should be written to elegantly handle the case where the hashes are of different types
+  -- If they're the same type, we should state the type once and then list the numbers
+  -- We would also want to handle multiple with dashes from first -- to last
+  -- Finally, we'd also want to handle the case of two connected by "and" and the case of three or more connected by commas and "and"
+  -- For now, we'll just list them all
+  local content = el.content
+  local text = pandoc.utils.stringify(content)
+  local hashes = split(text, ',')
+  if #hashes == 1 then
+    return pandoc.Link(formatted_hashref("0",hashes[1]),"/" .. hashes[1])
+  else
+    local formatted_hashes = {}
+    local j = 1
+    for i, hash in ipairs(hashes) do -- comma separated list of hashes
+      formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash),"/" .. hash)
+      j = j + 1
+      if i < #hashes then
+        formatted_hashes[j] = pandoc.Str(", ")
+        j = j + 1
+      end
+    end
+    print(formatted_hashes)
+    return pandoc.Span(formatted_hashes)
+  end
+end
+
 local function hashrefer(el)
   local content = el.content
   local text = pandoc.utils.stringify(content)
@@ -761,7 +841,7 @@ local function hashrefer(el)
       return pandoc.RawInline('latex', "\\cref{" .. text .. "}")
     end
   else
-    return pandoc.Link(text,"/" .. text)
+    return multihashref(el)
   end
 end
 
@@ -2041,6 +2121,7 @@ function tabler_html(el)
 end
 
 function tabler_latex(el)
+  print(el)
   local identifier = el.identifier
   if identifier == nil then identifier = '' end
 
