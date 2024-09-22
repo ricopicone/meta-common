@@ -761,33 +761,38 @@ local function book_value(ed,h,key)
 end
 
 -- Define a function that returns a formatted hash from its type from a book json file given the edition and hash
-local function formatted_hashref(ed,h)
+local function formatted_hashref(ed,h,cap)
   local type = book_value(ed,h,'type')
+  local hashref
   if type == 'chapter' then
-    return 'chapter ' .. book_value(ed,h,'ch')
+    hashref = 'chapter ' .. book_value(ed,h,'ch')
   elseif type == 'appendix' then
-    return 'appendix ' .. book_value(ed,h,'ch')
+    hashref = 'appendix ' .. book_value(ed,h,'ch')
   elseif type == 'section' then
-    return 'section ' .. book_value(ed,h,'sec')
+    hashref = 'section ' .. book_value(ed,h,'sec')
   elseif type == 'subsection' then
-    return 'subsection ' .. book_value(ed,h,'subsec')
+    hashref = 'subsection ' .. book_value(ed,h,'subsec')
   elseif type == 'lab' then
-    return 'lab ' .. book_value(ed,h,'ch')
+    hashref = 'lab ' .. book_value(ed,h,'ch')
   elseif type == 'resource' then
-    return 'resource ' .. book_value(ed,h,'sec')
+    hashref = 'resource ' .. book_value(ed,h,'sec')
   elseif type == 'example' then
-    return 'the example' -- really should add the example number, but it's not in the json at this point
+    hashref = 'the example' -- really should add the example number, but it's not in the json at this point
   elseif type == 'figure' then
-    return 'figure ' .. book_value(ed,h,'number')
+    hashref = 'figure ' .. book_value(ed,h,'number')
   elseif type == 'table' then
-    return 'table ' .. book_value(ed,h,'number')
+    hashref = 'table ' .. book_value(ed,h,'number')
   elseif type == 'problem' then
-    return 'problem ' .. book_value(ed,h,'problem-num')
+    hashref = 'problem ' .. book_value(ed,h,'problem-num')
   elseif type == 'labproblem' then
-    return 'problem ' .. book_value(ed,h,'problem-num')
+    hashref = 'problem ' .. book_value(ed,h,'problem-num')
   else
-    return ''
+    hashref = ''
   end
+  if cap then -- capitalize the first letter
+    hashref = hashref:sub(1,1):upper()..hashref:sub(2)
+  end
+  return hashref
 end
 
 -- Define a function to split a string into a table of strings based on a delimiter
@@ -800,7 +805,7 @@ local function split(s, delimiter)
 end
 
 -- Define a function to handle the case where a hashref is a list of hashes
-local function multihashref(el)
+local function multihashref(el, cap)
   -- Really, a more involved function should be written to elegantly handle the case where the hashes are of different types
   -- If they're the same type, we should state the type once and then list the numbers
   -- We would also want to handle multiple with dashes from first -- to last
@@ -810,12 +815,16 @@ local function multihashref(el)
   local text = pandoc.utils.stringify(content)
   local hashes = split(text, ',')
   if #hashes == 1 then
-    return pandoc.Link(formatted_hashref("0",hashes[1]),"/" .. hashes[1])
+    return pandoc.Link(formatted_hashref("0",hashes[1],cap),"/" .. hashes[1])
   else
     local formatted_hashes = {}
     local j = 1
     for i, hash in ipairs(hashes) do -- comma separated list of hashes
-      formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash),"/" .. hash)
+      if i == 1 and cap then
+        formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,cap),"/" .. hash)
+      else
+        formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,false),"/" .. hash)
+      end
       j = j + 1
       if i < #hashes then
         formatted_hashes[j] = pandoc.Str(", ")
@@ -832,6 +841,7 @@ local function hashrefer(el)
   local text = pandoc.utils.stringify(content)
   local cap = false
   if el.classes:includes('Hashref') then
+    print('Hashref')
     cap = true
   end
   if FORMAT:match 'latex' then
@@ -841,7 +851,7 @@ local function hashrefer(el)
       return pandoc.RawInline('latex', "\\cref{" .. text .. "}")
     end
   else
-    return multihashref(el)
+    return multihashref(el, cap)
   end
 end
 
