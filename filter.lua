@@ -815,15 +815,27 @@ local function multihashref(el, cap)
   local text = pandoc.utils.stringify(content)
   local hashes = split(text, ',')
   if #hashes == 1 then
-    return pandoc.Link(formatted_hashref("0",hashes[1],cap),"/" .. hashes[1])
+    if starts_with('fig:',hashes[1]) or starts_with('Fig:',hashes[1]) or starts_with('tbl:',hashes[1]) or starts_with('Tbl:',hashes[1]) then
+      return pandoc.Span(formatted_hashref("0",hashes[1],cap))
+    else
+      return pandoc.Link(formatted_hashref("0",hashes[1],cap),"/" .. hashes[1])
+    end
   else
     local formatted_hashes = {}
     local j = 1
     for i, hash in ipairs(hashes) do -- comma separated list of hashes
       if i == 1 and cap then
-        formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,cap),"/" .. hash)
+        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) then
+          formatted_hashes[i] = pandoc.Span(formatted_hashref("0",hash,cap))
+        else
+          formatted_hashes[i] = pandoc.Link(formatted_hashref("0",hash,cap),"/" .. hash)
+        end
       else
-        formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,false),"/" .. hash)
+        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) then
+          formatted_hashes[j] = pandoc.Span(formatted_hashref("0",hash,false))
+        else
+          formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,false),"/" .. hash)
+        end
       end
       j = j + 1
       if i < #hashes then
@@ -1341,7 +1353,52 @@ function figurer(el,nofloat)
     -- if ext == 'svg' then
     -- image.attr.attributes['width'] = "120%"
     -- end
-    return el
+    -- get figcaption options
+    local attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
+    figcaption_keys = {"color","format","credit","permission","reprint","territory","language","edition","fair","publicity","size","permissioncomment","layoutcomment"}
+    local options = ""
+    i = 0
+    for key, value in pairs(attributes) do
+      if has_value(figcaption_keys,key) then -- for markdown
+        if i==0 then
+          sep = ""
+        else
+          sep = " "
+        end
+        options = options .. sep .. key .. "=\"" .. value .. "\""
+        i = i + 1
+      end
+    end
+    -- caption
+    local caption = image.caption
+    if caption==nil then
+      caption = ""
+    else
+      caption = pandoc.Para(caption)
+      caption = pandoc.walk_block(caption,inline_filter)
+      local caption_doc = pandoc.Pandoc(caption)
+      caption = pandoc.write(caption_doc,'html')
+      caption = string.gsub(caption,'<p>','')
+      caption = string.gsub(caption,'</p>','')
+    end
+    -- construct html figure
+    local fig_begin = "<figure class=\"real-figure\" id=\""..el.identifier.."\">"
+    local fig_end = "</figure>"
+    local img_classes = ""
+    for i, c in ipairs(image.classes) do
+      img_classes = img_classes .. c .. " "
+    end
+    -- get the figure number from the book json
+    local fig_number = book_value("0",el.identifier,"number")
+    caption = "Figure "..fig_number..": "..caption
+    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\""..caption.."\" "..options..">"
+    local fig_caption = "<figcaption>"..caption.."</figcaption>"
+    local fig_html = 
+      fig_begin .."\n"..
+      img_content .."\n"..
+      fig_caption .."\n"..
+      fig_end
+    return pandoc.RawInline('html',fig_html)
   else
     return el
   end
