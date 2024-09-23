@@ -1365,7 +1365,7 @@ function figurer(el,nofloat)
         else
           sep = " "
         end
-        options = options .. sep .. key .. "=\"" .. value .. "\""
+        options = options .. sep .. "data-" .. key .. "=\"" .. value .. "\""
         i = i + 1
       end
     end
@@ -1380,18 +1380,24 @@ function figurer(el,nofloat)
       caption = pandoc.write(caption_doc,'html')
       caption = string.gsub(caption,'<p>','')
       caption = string.gsub(caption,'</p>','')
+      caption = string.gsub(caption,'\n',' ')
     end
     -- construct html figure
-    local fig_begin = "<figure class=\"real-figure\" id=\""..el.identifier.."\">"
+    local el_id = el.identifier
+    if el_id == nil then
+      el_id = ""
+    end
+    local fig_begin = "<figure class=\"real-figure\" id=\""..el_id.."\">"
     local fig_end = "</figure>"
     local img_classes = ""
     for i, c in ipairs(image.classes) do
       img_classes = img_classes .. c .. " "
     end
     -- get the figure number from the book json
-    local fig_number = book_value("0",el.identifier,"number")
+    local fig_number = book_value("0",el_id,"number")
+    if fig_number == nil then fig_number = "" end
     caption = "Figure "..fig_number..": "..caption
-    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\""..caption.."\" "..options..">"
+    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\" Figure "..fig_number.."\" "..options..">"
     local fig_caption = "<figcaption>"..caption.."</figcaption>"
     local fig_html = 
       fig_begin .."\n"..
@@ -1416,7 +1422,61 @@ local function figurediver(el)
 end
 
 local function algorithmerHTML(el)
-  return pandoc.RawBlock('html',"<pre class='algorithm'>\n" .. el.text .. "\n</pre>")
+  -- return pandoc.RawBlock('html',"<pre class='algorithm'>\n" .. el.text .. "\n</pre>")
+  -- deal with filename stuff
+  print(el)
+  local image = el.content[1].content[1]
+  local stripped = string.gsub(image.src,"common/",'')
+  local path
+  local file
+  local ext
+  path,file,ext = split_filename(stripped)
+  local fname
+  if (ext == nil or ext == '') then
+    fname = path..file..'svg'
+  elseif (ext == 'pdf' or ext == 'pgf') then
+    fname = string.gsub(path..file,'%.pdf','.svg')
+    fname = string.gsub(fname,'%.pgf','.svg')
+  else -- already has extension
+    fname = stripped
+  end
+  image.src = '/assets/' .. fname -- because relative src is to page in html
+  -- caption
+  local caption = image.caption
+  if caption==nil then
+    caption = ""
+  else
+    caption = pandoc.Para(caption)
+    caption = pandoc.walk_block(caption,inline_filter)
+    local caption_doc = pandoc.Pandoc(caption)
+    caption = pandoc.write(caption_doc,'html')
+    caption = string.gsub(caption,'<p>','')
+    caption = string.gsub(caption,'</p>','')
+    caption = string.gsub(caption,'\n',' ')
+  end
+  -- construct html figure
+  local el_id = el.identifier
+  if el_id == nil then
+    el_id = ""
+  end
+  local fig_begin = "<figure class=\"real-figure algorithm\" id=\""..el_id.."\">"
+  local fig_end = "</figure>"
+  local img_classes = ""
+  for i, c in ipairs(image.classes) do
+    img_classes = img_classes .. c .. " "
+  end
+  -- get the algorithm number from the book json [not implemented yet]
+  -- local fig_number = book_value("0",el_id,"number")
+  -- if fig_number == nil then fig_number = "" end
+  caption = "Algorithm: "..caption
+  local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\"Algorithm\">"
+  local fig_caption = "<figcaption>"..caption.."</figcaption>"
+  local fig_html = 
+    fig_begin .."\n"..
+    img_content .."\n"..
+    fig_caption .."\n"..
+    fig_end
+  return pandoc.RawInline('html',fig_html)
 end
 
 local function algorithmerLATEX(el)
@@ -2046,7 +2106,8 @@ function RawBlock(el)
     end
   elseif FORMAT:match 'html' then
     if el.format:match 'algorithm' then
-      return algorithmerHTML(el)
+      -- return algorithmerHTML(el)
+      return pandoc.RawBlock('html',"<pre class='algorithm'>\n" .. el.text .. "\n</pre>")
     else
       return el
     end
@@ -2174,7 +2235,15 @@ function Math(el)
 end
 
 function Figure(el) 
-  if el.classes:includes('nofloat') then
+  if el.content[1].content[1].classes:includes('algorithm') then
+    if FORMAT:match 'latex' then
+      return algorithmerLATEX(el)
+    elseif FORMAT:match 'html' then
+      return algorithmerHTML(el)
+    else
+      return el
+    end
+  elseif el.classes:includes('nofloat') then
     return figurer(el,true) -- making all figures nofloat
   elseif el.classes:includes('figure') then
     return figurer(el,true) -- making all figures nofloat
