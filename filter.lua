@@ -221,7 +221,7 @@ local interior_filter = {
     Table(el)
   end,
   Figure = function(el)
-    return figurer(el,true)
+    return Figure(el)
   end
   -- Image = function(el)
   --   print(el)
@@ -1424,7 +1424,7 @@ end
 local function algorithmerHTML(el)
   -- return pandoc.RawBlock('html',"<pre class='algorithm'>\n" .. el.text .. "\n</pre>")
   -- deal with filename stuff
-  print(el)
+  -- print(el)
   local image = el.content[1].content[1]
   local stripped = string.gsub(image.src,"common/",'')
   local path
@@ -1480,8 +1480,46 @@ local function algorithmerHTML(el)
 end
 
 local function algorithmerLATEX(el)
-  -- print('algorithmer el.text: '..el.text)
-  return pandoc.RawBlock('latex',el.text)
+  -- include content from the src file
+  local image = el.content[1].content[1]
+  local stripped = string.gsub(image.src,"common/",'')
+  local path
+  local file
+  local ext
+  path,file,ext = split_filename(stripped)
+  local fname = "common/"..path..file..'tex'
+  -- read file as raw latex
+  print('fname: '..fname)
+  local f = io.open(fname, "r")
+  local content = f:read("*all")
+  f:close()
+  -- filter out everthing prior to and including `\begin{document}` and after and including `\end{document}`
+  content = string.gsub(content,'.*\\begin{document}','')
+  content = string.gsub(content,'\\end{document}.*','')
+  -- caption
+  local caption = image.caption
+  if caption==nil then
+    caption = ""
+  else
+    caption = pandoc.Para(caption)
+    caption = pandoc.walk_block(caption,inline_filter)
+    local caption_doc = pandoc.Pandoc(caption)
+    caption = pandoc.write(caption_doc,'latex')
+  end
+  -- get the label from the identifier
+  local id = el.identifier
+  if id == nil then id = '' end
+  local label = "\\label{"..id.."}"
+  -- start with the width attribute
+  local width = el.content[1].content[1].attr.attributes["width"] -- Now nested down inside Image
+  local start = "\\begin{algorithmcenter}\n\\begin{minipage}{"..width.."}\n\\begin{algorithm}[H]\n"
+  -- construct latex algorithm environment
+  local fig_tex = start ..
+  "\\caption{"..caption.."}\n"..
+    label ..
+    content ..
+  "\\end{algorithm}\n\\end{minipage}\n\\end{algorithmcenter}"
+  return pandoc.RawBlock('latex', fig_tex)
 end
 
 local function version_params_subber(el)
@@ -2297,6 +2335,8 @@ function tabler_latex(el)
     end
     local caption_latex
     if caption then
+      -- filter out the trailing {#identifier} from the caption
+      caption_text = string.gsub(caption_text, "%s*{#.*}$", "")
       caption_latex = "\\tabcaption[][nofloat]{"..identifier.."}{"..caption_text.."}"
     else
       caption_latex = ''
