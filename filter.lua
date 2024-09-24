@@ -1171,6 +1171,9 @@ local function myurler(el)
       return pandoc.RawInline('latex', "\\myurlinline"..noid.."{" .. url .. "}{" .. hash .. "}")
     end
   elseif FORMAT:match 'html' then
+    if isempty(el.content) then
+      el.content = {pandoc.Str(el.target)}
+    end
     return myurler_html(el)
   else
     return el
@@ -1465,16 +1468,16 @@ local function algorithmerHTML(el)
   for i, c in ipairs(image.classes) do
     img_classes = img_classes .. c .. " "
   end
-  -- get the algorithm number from the book json [not implemented yet]
-  -- local fig_number = book_value("0",el_id,"number")
-  -- if fig_number == nil then fig_number = "" end
-  caption = "Algorithm: "..caption
+  -- get the algorithm number from the book json
+  local alg_number = book_value("0",el_id,"number")
+  if alg_number == nil then alg_number = "" end
+  caption = "Algorithm "..alg_number..": "..caption
   local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\"Algorithm\">"
   local fig_caption = "<figcaption>"..caption.."</figcaption>"
   local fig_html = 
     fig_begin .."\n"..
-    img_content .."\n"..
     fig_caption .."\n"..
+    img_content .."\n"..
     fig_end
   return pandoc.RawInline('html',fig_html)
 end
@@ -1662,7 +1665,14 @@ local function exerciser(el)
       )
     end
   else
-    return el 
+    -- Add data attributes to the div from the book json by looking up the hash
+    local hash = el.attr.attributes['h']
+    local hash_alt = el.attr.attributes['hash']
+    if not hash then if not hash_alt then hash = '' else hash=hash_alt end end
+    local data = book_value("0",hash,"problem-num")
+    if data == nil then data = "" end
+    el.attr.attributes['data-problem-num'] = data
+    return el
   end
 end
 
