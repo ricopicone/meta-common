@@ -1515,8 +1515,7 @@ local function algorithmerLATEX(el)
   local start = "\\begin{algorithmcenter}\n\\begin{minipage}{"..width.."}\n\\begin{algorithm}[H]\n"
   -- construct latex algorithm environment
   local fig_tex = start ..
-  "\\caption{"..caption.."}\n"..
-    label ..
+  "\\algcaption{"..id.."}{"..caption.."}\n"..
     content ..
   "\\end{algorithm}\n\\end{minipage}\n\\end{algorithmcenter}"
   return pandoc.RawBlock('latex', fig_tex)
