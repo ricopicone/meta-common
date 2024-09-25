@@ -45,8 +45,12 @@ section_chapter_keys = {}
 for edition, d in data.items():
     section_chapter_keys[edition] = []
     for k, v in d.items():
-        if isinstance(v, dict) and v.get('type') in ['section', 'chapter']:
+        if isinstance(v, dict) and v.get('type') in ['lab', 'section', 'chapter']:
+            print(f"hash: {v.get('hash')}, type: {v.get('type')}, sec: {v.get('sec')}")
             section_chapter_keys[edition].append(k)
+            # fix chapter sec values
+            if v.get('type') == 'chapter':  # Both labs and chapter sec values start with 'L'
+                v['sec'] = v['sec'].replace('L', '') + '.000'
 
 # 2.2 Iterate through the section and chapter keys to order them by their v['sec'] values
 
@@ -55,13 +59,20 @@ def pad_version(version):
     version_parts = version.split('.')
     return '.'.join([part.zfill(3) for part in version_parts])
 
+def handle_lab(version):
+    if version.startswith('L'):
+        # strip the 'L' and add '.999' to ensure labs are sorted after other sections
+        version = version[1:] + '.999'
+    return version
+    
+
 ordered_section_chapter_keys = {}
 for edition, sck in section_chapter_keys.items():
     ordered_section_chapter_keys[edition] = sorted(
         sck, 
-        key=lambda k: pad_version(data[edition][k].get('sec', 0))
+        key=lambda k: pad_version(handle_lab(data[edition][k].get('sec', 0)))
     )
-print(f"Ordered section and chapter keys: {ordered_section_chapter_keys}")
+# print(f"Ordered section and chapter keys: {ordered_section_chapter_keys}")
 
 # 3.3 Write the ordered section and chapter keys to the hash_mappings dictionary
 
@@ -73,7 +84,7 @@ for edition, sck in ordered_section_chapter_keys.items():
     for i, key in enumerate(sck):
         hash_mappings[edition]['next'][key] = sck[i+1] if i+1 < len(sck) else None
         hash_mappings[edition]['prev'][key] = sck[i-1] if i > 0 else None
-print(f"Hash mappings: {hash_mappings}")
+# print(f"Hash mappings: {hash_mappings}")
 
 # Step 4: Append the 'next' and 'prev' hash_mappings to data
 
