@@ -22,8 +22,7 @@
         "../section-divs.lua": "section-divs.lua",
         "../structure-common.py": "structure-common.py",
         "../versions-inheriter.py": "versions-inheriter.py",
-        "../versions-lister.py": "versions-lister.py",
-        "../versions.json": "versions.json"
+        "../versions-lister.py": "versions-lister.py"
     },
     "directories":{
         "../figures/0-standalone-tikz-template": "figures/0-standalone-tikz-template",
