@@ -201,10 +201,18 @@ local interior_filter = {
     return Link(el)
   end,
   Code = function(el)
-    return coder_latex(el)
+    if FORMAT:match 'latex' then
+      return coder_latex(el)
+    else
+      return Code(el)
+    end
   end,
   CodeBlock = function(el)
-    return coder_latex(el)
+    if FORMAT:match 'latex' then
+      return coder_latex(el)
+    else
+      return CodeBlock(el)
+    end
   end,
   Cite = function(el)
     local first_id = el.citations[1].id
@@ -1814,6 +1822,25 @@ local function example_solution(el)
   end
 end
 
+local function example_solution_html(el)
+  local el_walked = pandoc.walk_block(el,interior_filter)
+  local content_doc = pandoc.Pandoc(el_walked.content)
+  local content = pandoc.write(content_doc,'html')
+  content = delimiter_dollar(content)
+  if el.classes:includes('example-solution') then
+    return pandoc.Div(
+      pandoc.RawBlock('html',
+        content
+      ),
+      {class='example-solution'}
+    )
+  else
+    return pandoc.RawBlock('html',
+      content
+    )
+  end
+end
+
 local function exampler(el)
   if FORMAT:match 'latex' then
     local identifier = el.identifier
@@ -1834,6 +1861,34 @@ local function exampler(el)
       content..
       "\n\\end{myexample}"
     )
+  elseif FORMAT:match 'html' then
+    local identifier = el.identifier
+    local el_walked = pandoc.walk_block(el,{
+      Div = function(el)
+        return example_solution_html(el)
+      end
+    })
+    el_walked = pandoc.walk_block(el_walked,interior_filter)
+    local content_doc = pandoc.Pandoc(el_walked.content)
+    local content = pandoc.write(content_doc,'html')
+    content = delimiter_dollar(content)
+    local hash = el.attr.attributes['h']
+    local v = versioned(el)
+    if not v then v = '' end
+    -- Get the example number from the book json
+    local example_number = book_value(text_version,hash,"example-num")
+    new = pandoc.Div(
+      pandoc.RawBlock('html',
+        "<div class='example-title'>\n"..
+        "<span class='example-number'>Example "..example_number.."</span>\n"..
+        "</div>\n"..
+        content
+      ),
+      {class='example',id=identifier}
+    )
+    new.attr.attributes['data-hash'] = hash
+    new.attr.attributes['data-version'] = v
+    return new
   else
     return el 
   end
