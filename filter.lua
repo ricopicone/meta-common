@@ -215,9 +215,13 @@ local interior_filter = {
     end
   end,
   Cite = function(el)
-    local first_id = el.citations[1].id
-    if starts_with('sec:',first_id) or starts_with('Sec:',first_id) or starts_with('eq:',first_id) or starts_with('Eq:',first_id) or starts_with('tbl:',first_id) or starts_with('Tbl:',first_id) or starts_with('fig:',first_id) or starts_with('Fig:',first_id) or starts_with('lst:',first_id) or starts_with('Lst:',first_id) then
-      return pandoccrossrefer(el)
+    if FORMAT:match 'latex' then
+      local first_id = el.citations[1].id
+      if starts_with('sec:',first_id) or starts_with('Sec:',first_id) or starts_with('eq:',first_id) or starts_with('Eq:',first_id) or starts_with('tbl:',first_id) or starts_with('Tbl:',first_id) or starts_with('fig:',first_id) or starts_with('Fig:',first_id) or starts_with('lst:',first_id) or starts_with('Lst:',first_id) then
+        return pandoccrossrefer(el)
+      else
+        return Cite(el)
+      end
     else
       return Cite(el)
     end
@@ -785,7 +789,7 @@ local function formatted_hashref(ed,h,cap)
   elseif type == 'resource' then
     hashref = 'resource ' .. book_value(ed,h,'sec')
   elseif type == 'example' then
-    hashref = 'the example' -- really should add the example number, but it's not in the json at this point
+    hashref = 'example'
   elseif type == 'figure' then
     hashref = 'figure ' .. book_value(ed,h,'number')
   elseif type == 'table' then
@@ -1823,7 +1827,9 @@ local function example_solution(el)
 end
 
 local function example_solution_html(el)
+  print(dump(el))
   local el_walked = pandoc.walk_block(el,interior_filter)
+  print(dump(el_walked))
   local content_doc = pandoc.Pandoc(el_walked.content)
   local content = pandoc.write(content_doc,'html')
   content = delimiter_dollar(content)
@@ -1863,12 +1869,12 @@ local function exampler(el)
     )
   elseif FORMAT:match 'html' then
     local identifier = el.identifier
-    local el_walked = pandoc.walk_block(el,{
+    local el_walked = pandoc.walk_block(el,interior_filter)
+    el_walked = pandoc.walk_block(el_walked,{
       Div = function(el)
         return example_solution_html(el)
       end
     })
-    el_walked = pandoc.walk_block(el_walked,interior_filter)
     local content_doc = pandoc.Pandoc(el_walked.content)
     local content = pandoc.write(content_doc,'html')
     content = delimiter_dollar(content)
@@ -2219,7 +2225,23 @@ function RawBlock(el)
 end
 
 function RawInline(el)
-  return el
+  -- if FORMAT:match 'html', check for inline math. If so, wrap in $$ and return as RawInline 'html'
+  if FORMAT:match 'html' then
+    if el.format:match 'tex' then
+      -- Check if it's inline math by checking if it's surrounded by $ or if it includes \begin{equation or \begin{align or \begin{eqnarray or \begin{cases
+      if el.text:match('^%$.*%$$') then
+        return pandoc.RawInline('html',el.text)
+      elseif el.text:match('\\begin{equation') or el.text:match('\\begin{align') or el.text:match('\\begin{eqnarray') or el.text:match('\\begin{cases') then
+        return pandoc.RawInline('html','$$'..el.text..'$$')
+      else
+        return el
+      end
+    else
+      return el
+    end
+  else
+    return el
+  end
 end
 
 function Div(el)
@@ -2325,15 +2347,15 @@ end
 
 function Math(el)
   -- print('\nmath\n')
-  if FORMAT:match 'latex' then
+  -- if FORMAT:match 'latex' then
     if el.mathtype == 'InlineMath' then
       return pandoc.RawInline('tex', '$' .. el.text .. '$')
     else
       return el
     end
-  else
-    return el
-  end
+  -- else
+  --   return el
+  -- end
 end
 
 function Figure(el) 
