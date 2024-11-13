@@ -2347,15 +2347,15 @@ end
 
 function Math(el)
   -- print('\nmath\n')
-  -- if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' then
     if el.mathtype == 'InlineMath' then
       return pandoc.RawInline('tex', '$' .. el.text .. '$')
     else
       return el
     end
-  -- else
-  --   return el
-  -- end
+  else
+    return el
+  end
 end
 
 function Figure(el) 

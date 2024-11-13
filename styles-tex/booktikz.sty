@@ -382,6 +382,48 @@ font={\small}%
   },
 }
 
+%-- linear graphs
+
+\tikzstyle{groundmech}=
+  [
+    fill,
+    pattern=north east lines,
+    draw=none,
+    minimum width=0.75cm,
+    minimum height=0.3cm
+  ]
+\tikzstyle{normaltree}=
+  [
+    color=mygreen,
+    very thick
+  ]
+
+\def\tf#1#2{
+\begin{scope}[shift={#1},scale={#2}]
+  \node [draw,
+    minimum width=25pt,
+    minimum height=10pt,
+    thick,dashed,
+    line cap=round,
+    densely dashed,
+    color=violet,
+    rounded corners=3pt
+  ]
+  at (0,0) {};
+\end{scope}
+}
+
+\def\gy#1#2{
+\begin{scope}[shift={#1},scale={#2}]
+  \draw [thick,dashed,
+  line cap=round,
+  densely dashed,
+  color=violet,
+  rounded corners=10pt]
+  (-.2,.22) -- (.2,-.18) -- (.2,.22) -- (-.2,-.18) -- cycle;
+\end{scope}
+}
+
 %% 3D objects
 
 \usetikzlibrary{shapes.geometric}
