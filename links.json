@@ -20,7 +20,6 @@
         "../scripts/extract_chapter_section_hash_order.py": "scripts/extract_chapter_section_hash_order.py",
         "../scripts/source_dependencies_rule_writer.py": "scripts/source_dependencies_rule_writer.py",
         "../section-divs.lua": "section-divs.lua",
-        "../structure-common.py": "structure-common.py",
         "../versions-inheriter.py": "versions-inheriter.py",
         "../versions-lister.py": "versions-lister.py"
     },
