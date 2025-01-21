@@ -201,15 +201,27 @@ local interior_filter = {
     return Link(el)
   end,
   Code = function(el)
-    return coder_latex(el)
+    if FORMAT:match 'latex' then
+      return coder_latex(el)
+    else
+      return Code(el)
+    end
   end,
   CodeBlock = function(el)
-    return coder_latex(el)
+    if FORMAT:match 'latex' then
+      return coder_latex(el)
+    else
+      return CodeBlock(el)
+    end
   end,
   Cite = function(el)
-    local first_id = el.citations[1].id
-    if starts_with('sec:',first_id) or starts_with('Sec:',first_id) or starts_with('eq:',first_id) or starts_with('Eq:',first_id) or starts_with('tbl:',first_id) or starts_with('Tbl:',first_id) or starts_with('fig:',first_id) or starts_with('Fig:',first_id) or starts_with('lst:',first_id) or starts_with('Lst:',first_id) then
-      return pandoccrossrefer(el)
+    if FORMAT:match 'latex' then
+      local first_id = el.citations[1].id
+      if starts_with('sec:',first_id) or starts_with('Sec:',first_id) or starts_with('eq:',first_id) or starts_with('Eq:',first_id) or starts_with('tbl:',first_id) or starts_with('Tbl:',first_id) or starts_with('fig:',first_id) or starts_with('Fig:',first_id) or starts_with('lst:',first_id) or starts_with('Lst:',first_id) then
+        return pandoccrossrefer(el)
+      else
+        return Cite(el)
+      end
     else
       return Cite(el)
     end
@@ -777,7 +789,7 @@ local function formatted_hashref(ed,h,cap)
   elseif type == 'resource' then
     hashref = 'resource ' .. book_value(ed,h,'sec')
   elseif type == 'example' then
-    hashref = 'the example' -- really should add the example number, but it's not in the json at this point
+    hashref = 'example'
   elseif type == 'figure' then
     hashref = 'figure ' .. book_value(ed,h,'number')
   elseif type == 'table' then
@@ -1005,7 +1017,19 @@ local function theoremer(el)
     if identifier == nil then
       identifier = ""
     end
-    return pandoc.RawBlock('latex', "\\begin{theorem}{"..title.."}{"..identifier.."}\n"..content.."\n\\end{theorem}\n")
+    local type
+    if el.classes:includes('theorem') then
+      type = 'theorem'
+    elseif el.classes:includes('definition') then
+      type = 'definition'
+    elseif el.classes:includes('lemma') then
+      type = 'lemma'
+    elseif el.classes:includes('corollary') then
+      type = 'corollary'
+    elseif el.classes:includes('proposition') then
+      type = 'proposition'
+    end
+    return pandoc.RawBlock('latex', "\\begin{"..type.."}{"..title.."}{"..identifier.."}\n"..content.."\n\\end{"..type.."}\n")
   elseif FORMAT:match 'html' then
     if title == nil then
       title = ""
@@ -1814,6 +1838,27 @@ local function example_solution(el)
   end
 end
 
+local function example_solution_html(el)
+  print(dump(el))
+  local el_walked = pandoc.walk_block(el,interior_filter)
+  print(dump(el_walked))
+  local content_doc = pandoc.Pandoc(el_walked.content)
+  local content = pandoc.write(content_doc,'html')
+  content = delimiter_dollar(content)
+  if el.classes:includes('example-solution') then
+    return pandoc.Div(
+      pandoc.RawBlock('html',
+        content
+      ),
+      {class='example-solution'}
+    )
+  else
+    return pandoc.RawBlock('html',
+      content
+    )
+  end
+end
+
 local function exampler(el)
   if FORMAT:match 'latex' then
     local identifier = el.identifier
@@ -1834,6 +1879,34 @@ local function exampler(el)
       content..
       "\n\\end{myexample}"
     )
+  elseif FORMAT:match 'html' then
+    local identifier = el.identifier
+    local el_walked = pandoc.walk_block(el,interior_filter)
+    el_walked = pandoc.walk_block(el_walked,{
+      Div = function(el)
+        return example_solution_html(el)
+      end
+    })
+    local content_doc = pandoc.Pandoc(el_walked.content)
+    local content = pandoc.write(content_doc,'html')
+    content = delimiter_dollar(content)
+    local hash = el.attr.attributes['h']
+    local v = versioned(el)
+    if not v then v = '' end
+    -- Get the example number from the book json
+    local example_number = book_value(text_version,hash,"example-num")
+    new = pandoc.Div(
+      pandoc.RawBlock('html',
+        "<div class='example-title'>\n"..
+        "<span class='example-number'>Example "..example_number.."</span>\n"..
+        "</div>\n"..
+        content
+      ),
+      {class='example',id=identifier}
+    )
+    new.attr.attributes['data-hash'] = hash
+    new.attr.attributes['data-version'] = v
+    return new
   else
     return el 
   end
@@ -2164,7 +2237,23 @@ function RawBlock(el)
 end
 
 function RawInline(el)
-  return el
+  -- if FORMAT:match 'html', check for inline math. If so, wrap in $$ and return as RawInline 'html'
+  if FORMAT:match 'html' then
+    if el.format:match 'tex' then
+      -- Check if it's inline math by checking if it's surrounded by $ or if it includes \begin{equation or \begin{align or \begin{eqnarray or \begin{cases
+      if el.text:match('^%$.*%$$') then
+        return pandoc.RawInline('html',el.text)
+      elseif el.text:match('\\begin{equation') or el.text:match('\\begin{align') or el.text:match('\\begin{eqnarray') or el.text:match('\\begin{cases') then
+        return pandoc.RawInline('html','$$'..el.text..'$$')
+      else
+        return el
+      end
+    else
+      return el
+    end
+  else
+    return el
+  end
 end
 
 function Div(el)
@@ -2195,7 +2284,7 @@ function Div(el)
       return figurediver(el)
     elseif el.classes:includes('example') then
       return exampler(el)
-    elseif el.classes:includes('theorem') then
+    elseif el.classes:includes('theorem') or el.classes:includes('lemma') or el.classes:includes('corollary') or el.classes:includes('proposition') then
       return theoremer(el)
     elseif el.classes:includes('definition') then
       return definitioner(el)

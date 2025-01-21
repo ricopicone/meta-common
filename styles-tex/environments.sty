@@ -1196,18 +1196,33 @@
 \let\endtheorem\relax
 \let\corollary\relax
 \let\endcorollary\relax
+\let\lemma\relax
+\let\endlemma\relax
+\let\proposition\relax
+\let\endproposition\relax
 \newtcbtheorem[auto counter,number within=chapter,crefname={definition}{definitions},Crefname={Definition}{Definitions}]%
 {definition}{Definition}{boxxstyle}{def}
 \newtcbtheorem[use counter from=definition,crefname={theorem}{theorems},Crefname={Theorem}{Theorems}]%
 {theorem}{Theorem}{boxxstyle}{thm}
-\newtcbtheorem[use counter from=definition,crefname={corollary}{corollaries},Crefname={Corollary}{Corollaries}]%
-{corollary}{Corollary}{boxxstyle}{cor}
+\newtcbtheorem[use counter from=definition,crefname={lemma}{lemmas},Crefname={Lemma}{Lemmas}]{lemma}{Lemma}{boxxstyle}{lem}
+\newtcbtheorem[use counter from=definition,crefname={proposition}{propositions},Crefname={Proposition}{Propositions}]{proposition}{Proposition}{boxxstyle}{prop}
+\newtcbtheorem[use counter from=definition,crefname={corollary}{corollaries},Crefname={Corollary}{Corollaries}]{corollary}{Corollary}{boxxstyle}{cor}
 \makeatletter
 \newcommand\tcb@cnt@Definitionautorefname{definition}
 \newcommand\tcb@cnt@Theoremautorefname{theorem}
 \newcommand\tcb@cnt@Corollaryautorefname{corollary}
-\crefformat{tcb@cnt@Definition}{example~#2#1#3}
-\Crefformat{tcb@cnt@Definition}{Example~#2#1#3}
+\newcommand\tcb@cnt@Lemmaautorefname{lemma}
+\newcommand\tcb@cnt@Propositionautorefname{proposition}
+\crefformat{tcb@cnt@definition}{definition~#2#1#3}
+\Crefformat{tcb@cnt@Definition}{Definition~#2#1#3}
+\crefformat{tcb@cnt@theorem}{theorem~#2#1#3}
+\Crefformat{tcb@cnt@Theorem}{Theorem~#2#1#3}
+\crefformat{tcb@cnt@corollary}{corollary~#2#1#3}
+\Crefformat{tcb@cnt@Corollary}{Corollary~#2#1#3}
+\crefformat{tcb@cnt@lemma}{lemma~#2#1#3}
+\Crefformat{tcb@cnt@Lemma}{Lemma~#2#1#3}
+\crefformat{tcb@cnt@proposition}{proposition~#2#1#3}
+\Crefformat{tcb@cnt@Proposition}{Proposition~#2#1#3}
 \makeatother
 
 % target system TS and development system DS alternatives
@@ -2457,6 +2472,7 @@
 	\def\thisds{\ds}% use this doc's versions
   \def\idtitle{\unexpanded{#2}}% default: don't expand macros
   \def\theproblemifapplicable{}% default: so problem-num is empty if not a problem
+  \def\theexampleifapplicable{}% default: so example-num is empty if not an example
   \IfEqCase{#1}{%
     {problem}{% regular problem
       \def\idtitle{#2}%
@@ -2465,6 +2481,10 @@
     {labproblem}{%
       \def\idtitle{#2}%
       \def\theproblemifapplicable{\thelabexercise}% lab problem number
+    }%
+    {example}{%
+      \def\idtitle{#2}%
+      \def\theexampleifapplicable{\theexample}% example number
     }%
   }%
   \ifdefined\issolution
@@ -2486,6 +2506,7 @@
     "subsectionhash": "\subsectionhash",
 		"p": "\thepage",
     "problem-num": "\theproblemifapplicable",
+    "example-num": "\theexampleifapplicable",
     "wherein": "\unexpanded{#5}" \br,
 	}%
   \fi
