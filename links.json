@@ -2,9 +2,6 @@
     "files":{
         "../.gitignore": ".gitignore",
         "../_config.yml": "_config.yml",
-        "../_layouts/chapter.html": "_layouts/chapter.html",
-        "../_layouts/page.html": "_layouts/page.html",
-        "../_layouts/section.html": "_layouts/section.html",
         "../_template-blank.md": "_template-blank.md",
         "../_template-external-url.md": "_template-external-url.md",
         "../_template-placeholder.md": "_template-placeholder.md",
