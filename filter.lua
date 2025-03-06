@@ -1426,9 +1426,115 @@ function figurer(el,nofloat)
 end
 
 local function figurediver(el)
-  -- for subfigure divs
+  -- For subfigure Divs
+  -- Process the Image objects and the caption.
+  --
+  -- The source for these Divs looks like this:
+  -- ::: {#fig:foo .figure .subfigures h="fig:foo" rows=2 caption_plain="A plain text version of the caption."}
+  -- ![A subfigure caption.](figures/foo-1/main){#fig:foo-1 .subfigure .figure .standalone}
+  --
+  -- ![Another subfigure caption.](figures/foo-1/main){#fig:foo-2 .subfigure .figure .standalone}
+  --
+  -- A caption.
+  -- :::
+  -- The caption is the last element in the Div.
+  -- The `rows` attribute is the number of rows of subfigures.
+  -- Given `N` subfigures, `ceil(N/rows)` is the number of columns.
+  -- If `rows` is not given, it defaults to 1.
   if FORMAT:match 'latex' then
-    -- print(dump(el))
+    -- Use the following output format (continued from the example above):
+    -- \begin{figure}[H]
+    -- \centering
+    -- % Row 1
+    -- \hspace*{\fill}%
+    -- \subcaptionbox{A subfigure caption.\label{fig:foo-1}}
+    -- {\includegraphics{figures/foo-1/main}}
+    -- \hspace*{\fill}\\%
+    -- % Row 2
+    -- \hspace*{\fill}%
+    -- \subcaptionbox{Another subfigure caption.\label{fig:foo-2}}
+    -- {\includegraphics{figures/foo-2/main}}
+    -- \hspace*{\fill}%
+    -- \figcaption[color=color]{fig:foo}{A caption.}
+    -- \end{figure}
+    -- Get the number of rows
+    local rows = el.attr.attributes['rows']
+    if not rows then
+      rows = 1
+    else
+      rows = tonumber(rows)
+    end
+    -- Get the caption
+    -- See if the last element is an Image object (otherwise, it's a caption)
+    local last_el = el.content[#el.content].content[1]
+    local n_subfigures
+    local caption
+    local caption_plain
+    if last_el.t == 'Image' then
+      n_subfigures = #el.content
+      caption = pandoc.Para{}
+    else
+      n_subfigures = #el.content-1
+      caption = el.content[#el.content]
+    end
+    caption_plain = el.attr.attributes['caption_plain']
+    -- Get the subfigures
+    local subfigures = {}
+    for i = 1, n_subfigures do
+      subfigures[i] = el.content[i].content[1]
+    end
+    -- Extract the source file name, caption, and label from each subfigure
+    local subfigure_captions = {}
+    local subfigure_srcs = {}
+    local subfigure_labels = {}
+    for i = 1, #subfigures do
+      local subfigure_image = subfigures[i]
+      subfigure_captions[i] = subfigure_image.caption
+      if subfigure_captions[i] == nil or isempty(subfigure_captions[i]) then
+        subfigure_captions[i] = ""
+      end
+      subfigure_srcs[i] = subfigure_image.src
+      if subfigure_srcs[i] == nil then
+        subfigure_srcs[i] = ""
+      end
+      subfigure_labels[i] = subfigure_image.identifier
+      if subfigure_labels[i] == nil then
+        subfigure_labels[i] = ""
+      end
+    end
+    -- Construct the LaTeX code
+    local fig_tex = "\\begin{figure}[H]\n" ..
+      "\\centering\n"
+    -- Construct the subfigures
+    local cols = math.ceil(n_subfigures/rows)
+    local current_row = 1
+    fig_tex = fig_tex .. "% Row 1\n"
+    for i = 1, #subfigures do
+      if math.fmod(i-1,cols) == 0 and i ~= 1 then
+        current_row = current_row + 1
+        fig_tex = fig_tex .. "\\\\\n% Row " .. current_row .. "\n"
+      end
+      -- Determine which graphics command to use
+      if subfigures[i].classes:includes('standalone') then
+        graphics_command = "\\noindent\\includestandalone{"..subfigure_srcs[i].."}"
+      elseif subfigures[i].classes:includes('pgf') then
+        graphics_command = "\\noindent\\inputpgf{"..subfigure_srcs[i].."}"
+      else
+        graphics_command = "\\noindent\\includegraphics{"..subfigure_srcs[i].."}"
+      end
+      -- Append the subfigure
+      fig_tex = fig_tex .. "\\hspace*{\\fill}%\n" ..
+        "\\subcaptionbox{" .. subfigure_captions[i] .. "\\label{" .. subfigure_labels[i] .. "}}\n" ..
+        "{" .. graphics_command .."}\n" ..
+        "\\hspace*{\\fill}%\n"
+    end
+    -- Construct the caption
+    local caption_doc = pandoc.Pandoc(caption)
+    local caption_tex = pandoc.write(caption_doc,'latex')
+    fig_tex = fig_tex .. "\\figcaption{" .. el.identifier .. "}{" .. caption_tex .. "}\n" ..
+      "\\end{figure}\n"
+    return pandoc.RawBlock('latex', fig_tex)
+
   elseif FORMAT:match 'html' then
     return el 
   else
@@ -1608,7 +1714,7 @@ end
 function interior_ordered_lister(el)
   if FORMAT:match 'latex' then
     -- Walk with interior_filter
-    local el = pandoc.walk_block(el,interior_filter)
+    el = pandoc.walk_block(el,interior_filter)
     return el -- going to make alpha in environments.sty
   elseif FORMAT:match 'html' then
     -- el.classes[#el.classes+1] = 'alpha-ol' -- Apparently OrderedList elements don't have classes anymore? Getting "attempt to index a nil value (field 'classes')" error
