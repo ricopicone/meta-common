@@ -1017,7 +1017,19 @@ local function theoremer(el)
     if identifier == nil then
       identifier = ""
     end
-    return pandoc.RawBlock('latex', "\\begin{theorem}{"..title.."}{"..identifier.."}\n"..content.."\n\\end{theorem}\n")
+    local type
+    if el.classes:includes('theorem') then
+      type = 'theorem'
+    elseif el.classes:includes('definition') then
+      type = 'definition'
+    elseif el.classes:includes('lemma') then
+      type = 'lemma'
+    elseif el.classes:includes('corollary') then
+      type = 'corollary'
+    elseif el.classes:includes('proposition') then
+      type = 'proposition'
+    end
+    return pandoc.RawBlock('latex', "\\begin{"..type.."}{"..title.."}{"..identifier.."}\n"..content.."\n\\end{"..type.."}\n")
   elseif FORMAT:match 'html' then
     if title == nil then
       title = ""
@@ -2378,7 +2390,7 @@ function Div(el)
       return figurediver(el)
     elseif el.classes:includes('example') then
       return exampler(el)
-    elseif el.classes:includes('theorem') then
+    elseif el.classes:includes('theorem') or el.classes:includes('lemma') or el.classes:includes('corollary') or el.classes:includes('proposition') then
       return theoremer(el)
     elseif el.classes:includes('definition') then
       return definitioner(el)
