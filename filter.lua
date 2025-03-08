@@ -1499,19 +1499,39 @@ local function figurediver(el)
     local subfigure_captions = {}
     local subfigure_srcs = {}
     local subfigure_labels = {}
+    local subfigure_classes = {}
     for i = 1, #subfigures do
-      local subfigure_image = subfigures[i]
+      local subfigure_image
+      if subfigures[i].t == 'Image' then
+        subfigure_image = subfigures[i]
+      else -- Plain (not sure why this happens)
+        subfigure_image = subfigures[i].content[1]
+      end
+      -- Subfigure caption
       subfigure_captions[i] = subfigure_image.caption
       if subfigure_captions[i] == nil or isempty(subfigure_captions[i]) then
         subfigure_captions[i] = ""
       end
+      --- Parse subfigure caption as latex
+      local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[i])
+      subfigure_captions[i] = pandoc.write(subfigure_caption_doc,'latex')
+      --- Now stringify the caption
+      subfigure_captions[i] = pandoc.utils.stringify(subfigure_captions[i])
+      -- Image source
       subfigure_srcs[i] = subfigure_image.src
       if subfigure_srcs[i] == nil then
         subfigure_srcs[i] = ""
       end
+      -- Label
       subfigure_labels[i] = subfigure_image.identifier
       if subfigure_labels[i] == nil then
-        subfigure_labels[i] = ""
+        random_number = math.random(1000000)
+        subfigure_labels[i] = "fig:auto-" .. random_number
+      end
+      -- Classes
+      subfigure_classes[i] = subfigure_image.classes
+      if subfigure_classes[i] == nil then
+        subfigure_classes[i] = {}
       end
     end
     -- Construct the LaTeX code
@@ -1520,6 +1540,7 @@ local function figurediver(el)
     -- Construct the subfigures
     local cols = math.ceil(n_subfigures/rows)
     local current_row = 1
+    local subcaption_width = 1/cols - 0.05
     fig_tex = fig_tex .. "% Row 1\n"
     for i = 1, #subfigures do
       if math.fmod(i-1,cols) == 0 and i ~= 1 then
@@ -1527,18 +1548,24 @@ local function figurediver(el)
         fig_tex = fig_tex .. "\\\\\n% Row " .. current_row .. "\n"
       end
       -- Determine which graphics command to use
-      if subfigures[i].classes:includes('standalone') then
-        graphics_command = "\\noindent\\includestandalone{"..subfigure_srcs[i].."}"
-      elseif subfigures[i].classes:includes('pgf') then
+      if subfigure_classes[i]:includes('standalone') then
+        graphics_command = "\\noindent\\includegraphics{"..subfigure_srcs[i].."}" -- \includestandalone has issues with spacing subfigures
+      elseif subfigure_classes[i]:includes('pgf') then
         graphics_command = "\\noindent\\inputpgf{"..subfigure_srcs[i].."}"
       else
         graphics_command = "\\noindent\\includegraphics{"..subfigure_srcs[i].."}"
       end
+      local filler_before = "\\hspace*{\\fill}%\n"
+      local filler_after = ""
+      if math.fmod(i,cols) == 0 then
+        filler_after = "\\hspace*{\\fill}%\n"
+      end
       -- Append the subfigure
-      fig_tex = fig_tex .. "\\hspace*{\\fill}%\n" ..
-        "\\subcaptionbox{" .. subfigure_captions[i] .. "\\label{" .. subfigure_labels[i] .. "}}\n" ..
+      fig_tex = fig_tex .. filler_before ..
+        "\\subcaptionbox{" .. subfigure_captions[i] .. "\\label{" .. subfigure_labels[i] .. "}}" ..
+        "[".. subcaption_width .."\\linewidth]\n" ..
         "{" .. graphics_command .."}\n" ..
-        "\\hspace*{\\fill}%\n"
+        filler_after
     end
     -- Construct the caption
     local caption_doc = pandoc.Pandoc(caption)
@@ -1762,7 +1789,7 @@ local function exerciser(el)
   if FORMAT:match 'latex' then
     local el_walked = pandoc.walk_block(el,{
       Div = function(el)
-        if el.classes:includes('exercise-solution') then
+        if el.classes:includes('exercise-solution') or el.classes:includes('solution') then
           return exercise_solution(el)
         else
           return el
