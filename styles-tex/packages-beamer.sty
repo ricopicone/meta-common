@@ -1,10 +1,42 @@
 % Fonts
 
 \usepackage[final]{microtype} % nice microadjustments to fonts
-\usepackage{common/styles-tex/rtcbookfonts}
+% Set fonts to correspond with bookfonts
+\usefonttheme{serif}
+\usepackage{nunito}
+% \usepackage{common/styles-tex/bookfonts}
+\RequirePackage[T1]{fontenc}%
+% \usepackage{newpxmath} % math font is Palatino compatible
+% \let\Bbbk\relax % so it doesn't clash with amssymb
+\usepackage[no-math]{fontspec}
+\setmainfont{Palatino}
+\setmonofont{Latin Modern Mono}[%
+  % Scale=MatchLowercase, % seems a bit too big
+  Scale=1.05, % a touch smaller than MatchLowercase
+  % UprightFeatures={FakeBold=1.25}, % bolden up the default
+  BoldFont=*,
+  BoldFeatures={FakeBold=2},
+  % LetterSpace=-2, % percent of height ... removed because it messes up monospacing!
+]
+\setsansfont{Helvetica}
+\newfontfamily\unicodefont{DejaVu Sans}% For Unicode symbols
+\def\DejaSans{\unicodefont} % alias for DejaVu Sans
+\newfontfamily\dotmatrixfont{Cash Point Mono}
+\newfontfamily\keypadfont{News Gothic Std}[Scale=0.9]%
 
-% Math macros
-\usepackage{common/styles-tex/rtcbookmathmacros}
+\newcommand\vartextvisiblespace[1][.3em]{%
+  \mbox{\kern.1em\vrule height.3ex}%
+  \vbox{\hrule width#1}%
+  \hbox{\vrule height.3ex}
+}
+
+\usepackage{newunicodechar}
+\newunicodechar{‐}{-} % replacing unicode hyphen, which is missing from Palatino, with hyphen-minus
+\newunicodechar{℠}{\textservicemark} % replacing unicode service mark ... doesn't get rid of microtype warning, though
+
+\usepackage{textcomp} % for \textservicemark command
+\usepackage{unicode-math}
+
 
 % Cleverref
 
@@ -36,7 +68,7 @@
 
 % Color
 
-\usepackage{common/styles-tex/rtcbookcolors}
+\usepackage{common/styles-tex/bookcolors}
 
 % Tables
 
@@ -44,6 +76,7 @@
 \usepackage{multirow} % for tabulars
 \usepackage{longtable}
 \usepackage{makecell} % for \makecell{two\\lines}
+\usepackage{stackengine} %
 
 % Math
 
@@ -57,11 +90,12 @@
 
 % Tikz and pgf
 
-\usepackage{common/styles-tex/rtcbooktikz}
+\usepackage{common/styles-tex/booktikz}
 
 % Menukeys
 
-\usepackage{common/styles-tex/rtcbookmenukeys}
+\usepackage[os=mac]{menukeys}
+\usepackage{common/styles-tex/bookmenukeys}
 
 % Visible space
 
@@ -124,8 +158,1608 @@
 \setlength{\textwidth}{28.7cm}
 \setlength{\textheight}{20.0cm} 
 
-% Format presentation size to A4ish
-\setlength{\paperwidth}{562px}
-\setlength{\paperheight}{397px}
-\setlength{\textwidth}{524px}
-\setlength{\textheight}{359px} 
+% Format presentation size to fit
+% \setlength{\paperwidth}{562px}
+% \setlength{\paperheight}{397px}
+% \setlength{\textwidth}{524px}
+% \setlength{\textheight}{359px} 
+
+% Format presentation size to letter paper and 16:9 aspect ratio
+\setlength{\paperwidth}{9in}
+\setlength{\paperheight}{5.0625in}
+\setlength{\textwidth}{8in}
+\setlength{\textheight}{4.0625in}
+
+% Minted code
+
+\RequirePackage[draft=false,newfloat]{minted}%
+\setminted{
+  autogobble,
+  fontsize=\small,
+  % frame=single,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray},
+  framesep=4pt,
+  tabsize=2,
+  escapeinside=``,
+  mathescape,
+}
+\setminted[text]{
+  autogobble,
+  fontsize=\small,
+  frame=leftline,
+  framerule=1pt,
+  rulecolor=\color{gray!50},
+  framesep=4pt,
+  xleftmargin=\parindent,
+  breaklines=true
+}
+% -- fixing C highlighting of "thread" as a keyword (not an actual keyword) ... couldn't get to work
+% \AtBeginEnvironment{minted}{%
+%   \let\originalPYGdefault\PYGdefault
+%   \renewcommand{\PYGdefault}[2]{%
+%     % \ifstrequal{#1}{k}%
+%      \ifstrequal{#2}{thread}%
+%        {\originalPYGdefault{n}{#2}}%
+%        {\originalPYGdefault{#1}{#2}}%
+%   }%
+% }
+% -- this makes the mintinlines match the current font size
+\makeatletter
+\newcommand{\currentfontsize}{\fontsize{\f@size}{\f@baselineskip}\selectfont}
+\makeatother
+\setmintedinline{fontsize=\currentfontsize}
+% -- define shortened inline macros
+\newmintinline[mc]{c}{}
+\newmintinline[ml]{latex}{}
+\newmintinline[mm]{matlab}{}
+\newmintinline[mpy]{python}{}
+\newmintinline[mb]{bash}{}
+% -- make ARM inline code have a white background
+\setmintedinline[arm]{bgcolor=white}
+% -- fix for bug in minted with spacing with colorbg, see https://tex.stackexchange.com/questions/228058/how-to-space-before-and-after-a-minted-code-block-with-bgcolor
+\makeatletter
+\patchcmd{\minted@colorbg}{\noindent}{\medskip\noindent}{}{}
+\apptocmd{\endminted@colorbg}{\par\medskip}{}{}
+\makeatother
+\newcommand{\mcwe}[1]{{\mc{#1}}}
+% -- get rid of red box around certain characters
+\makeatletter
+\AtBeginEnvironment{minted}{\dontdofcolorbox}
+\def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+\xpatchcmd{\inputminted}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{}
+\xpatchcmd{\mintinline}{\minted@fvset}{\minted@fvset\dontdofcolorbox}{}{} % see https://tex.stackexchange.com/a/401250/
+\makeatother
+% -- listings
+% \newenvironment{codelisting}{\captionsetup{type=listing}}{}
+% \SetupFloatingEnvironment{listing}{name=Listing,placement=tbhp}
+% \AtBeginDocument{\counterwithin{listing}{chapter}}
+\RequirePackage[skins,breakable,many,minted]{tcolorbox}
+\newcommand{\mynewminted}[3]{%
+  \newminted[#1]{#2}{#3}%
+  \tcbset{myminted/#1/.style={minted language=#2,minted options={#3}}}}
+\mynewminted{clisting}{c}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\mynewminted{clistinglong}{c}{% no samepage
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  frame=none
+}
+\mynewminted{clistingtexcomments}{c}{% with texcomments
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  texcomments,
+  samepage,
+  frame=none
+}
+\mynewminted{clistinglongtexcomments}{c}{% no samepage and with texcomments
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  texcomments,
+  frame=none
+}
+\mynewminted{clistinglinenos}{c}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none,
+  linenos=true
+}
+\mynewminted{clistinglonglinenos}{c}{% no samepage
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  frame=none,
+  linenos=true
+}
+\mynewminted{armlisting}{ARM}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\mynewminted{textlisting}{text}{%
+  tabsize=2,
+  fontsize=\footnotesize,
+  autogobble,
+  escapeinside=``,
+  mathescape,
+  samepage,
+  frame=none
+}
+\let\myitshape\itshape % for italics in listing headers even when we \let\itshape\relax below
+\newtcblisting[
+  use counter*=listing,
+  % number within=chapter,
+  list inside=mypyg,
+  crefname={listing}{listings},
+  Crefname={Listing}{Listings}]%
+  {listingsbox}[4][]{%
+  listing only,
+  boxxstyle,
+  fonttitle=\small,
+  title={{Listing \thetcbcounter} #3},
+  list entry={\protect\numberline{\thetcbcounter}#3},
+  myminted/#2,
+  #1,
+  label=#4,
+  nofloat}
+\newtcblisting[
+  use counter from=listingsbox,
+  list inside=mypyg,
+  crefname={listing}{listings},
+  Crefname={Listing}{Listings}]%
+  {listingsboxfloat}[5][]{%
+  listing only,
+  boxxstyle,
+  fonttitle=\small,
+  title={{Listing \thetcbcounter} #3},
+  list entry={\protect\numberline{\thetcbcounter}#3},
+  myminted/#2,
+  #1,
+  label=#4,
+  floatplacement=h,
+  float=#5}
+% -- suppress italics
+\AtBeginEnvironment{listingsbox}{\let\itshape\relax}
+\AtBeginEnvironment{listingsboxfloat}{\let\itshape\relax}
+\AtBeginEnvironment{minted}{\let\itshape\relax}
+% \AtBeginEnvironment{mintinline}{\let\itshape\relax} % doesn't seem to work
+\newcommand{\llabel}[1]{\label[line]{#1}\hypertarget{#1}{}}
+\newcommand{\lref}[1]{\hyperlink{#1}{\FancyVerbLineautorefname~\ref*{#1}}}
+\RequirePackage{xpatch}
+\xpatchcmd{\mintinline}{\begingroup}{\begingroup\let\itshape\relax}{}{}
+
+% Beamer customization
+
+\setbeamersize{description width=3ex}
+\setbeamertemplate{navigation symbols}{} % remove navigation symbols
+% \setbeamercovered{transparent} % transparent overlays
+
+%% Progress bar
+
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+\definecolor{pbgray}{HTML}{575757}% background color for the progress bar
+
+\makeatletter
+\def\progressbar@progressbar{} % the progress bar
+\newcount\progressbar@tmpcounta% auxiliary counter
+\newcount\progressbar@tmpcountb% auxiliary counter
+\newdimen\progressbar@pbht %progressbar height
+\newdimen\progressbar@pbwd %progressbar width
+\newdimen\progressbar@tmpdim % auxiliary dimension
+
+\progressbar@pbwd=0.925\paperwidth
+\progressbar@pbht=1pt
+
+% the progress bar
+\usepackage{pgfplots}
+\usetikzlibrary{fpu}
+\def\progressbar@progressbar{%
+
+    \progressbar@tmpcounta=\insertframenumber
+    \progressbar@tmpcountb=\inserttotalframenumber
+    \progressbar@tmpdim=\progressbar@pbwd
+    \pgfkeys{/pgf/fpu=true,/pgf/fpu/output format=fixed}
+    \pgfmathparse{\insertframenumber/\inserttotalframenumber}
+    \edef\progressbar@pbwdnow{\pgfmathresult}
+    \pgfkeys{/pgf/fpu=false}
+
+  \begin{tikzpicture}[very thin]
+    \draw[pbgray!30,line width=\progressbar@pbht]
+      (0pt, 0pt) -- ++ (\progressbar@pbwd,0pt);
+    \draw[draw=none]  (\progressbar@pbwd,0pt) -- ++ (2pt,0pt);
+
+    \draw[fill=pbgray!30,draw=pbgray] %
+       ( $ (\progressbar@pbwdnow*\progressbar@pbwd, \progressbar@pbht) + (0,1.5pt) $ ) -- ++(60:5pt) -- ++(180:5pt) ;
+
+    \node[draw=pbgray!30,text width=5em,align=center,inner sep=2pt,
+      text=pbgray!70,anchor=east] at (0,0) {\footnotesize \insertframenumber/\inserttotalframenumber};
+  \end{tikzpicture}%
+}
+
+\addtobeamertemplate{headline}{}
+{%
+  % \begin{beamercolorbox}[wd=\paperwidth,ht=5ex,center,dp=1ex]{white}%
+  %   \progressbar@progressbar%
+  % \end{beamercolorbox}% This keeps giving Dimension too large errors when there are too many slides
+}
+\makeatother
+
+%% Beamer colors
+
+\setbeamercolor{palette primary}{fg=c1, bg=white}
+\setbeamercolor{palette secondary}{fg=c2, bg=white}
+\setbeamercolor{palette tertiary}{fg=c3, bg=white}
+\setbeamercolor{palette quaternary}{fg=c4, bg=white}
+\setbeamercolor{structure}{fg=c1} % itemize, enumerate, etc
+\setbeamercolor{background canvas}{bg=black}
+\setbeamercolor{normal text}{fg=white}
+\setbeamercolor{block title}{fg=white,bg=c1}
+\setbeamercolor{block body}{fg=white,bg=black!90}
+
+%% Wrap a white box around all includegraphics images by redefining the includegraphics command
+
+\let\oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]{%
+  \fboxsep=0pt% padding thickness
+  \fboxrule=1pt% border thickness
+  \fcolorbox{white}{white}{\oldincludegraphics[#1]{#2}}%
+}
+
+% Redefining \figcaption[x][y]{z}{w} to be \caption{z} with label z
+
+\makeatletter
+\NewExpandableDocumentCommand{\figcaption}{%
+  o% key/value pairs for idfig
+  O{float}% or nofloat DEPRECATED (does nothing now)
+  m% id
+  m% caption
+}{%
+  % \ifdefined\issolution % solutions manual
+  %   \IfInsideSolutionTF{}{%
+  %     \extreffig{#3}%
+  %   }%
+  % \fi %
+  \caption{#4}
+  % \ifdefined\issolution % in solutions manual
+  %   \IfInsideSolutionT{% if in exercise SOLUTION, give regular label
+  %     \label{#3} 
+  %   }% otherwise don't label it
+  % \else % idfig if not in solutions manual
+  %   \idfig[#1]{#3}{#4}
+  % \fi %
+  \gdef\graphicslist{}% reset graphics list
+}%
+\makeatother
+
+% Redefining \section and sub commands to be the regular \section and sub commands
+
+\RequirePackage{xparse}
+\RequirePackage{xstring}
+\RequirePackage{etoolbox}
+
+%% Utility for determining if it is currently a section, subsection, etc. for tsref and dsref commands
+
+\def\thisisa{} % def this at the end of each sectioning command ... used to test in tsref and dsref
+\def\thissecversioned{}
+
+%% Url of this location in the doc
+
+\makeatletter
+\NewDocumentCommand{\defurlhere}{}{%
+	\IfEqCase{\thisisa}{%
+		{}{\def\urlhere{\bookurl}}%
+		{ch}{\def\urlhere{\churl}}%
+		{sec}{\def\urlhere{\securl}}%
+		{subsec}{\def\urlhere{\subsecurl}}%
+	}%
+}
+\makeatother
+
+%% Slug/long-id of this location in the doc
+
+\makeatletter
+\NewDocumentCommand{\defslughere}{}{%
+	\IfEqCase{\thisisa}{%
+		{}{\def\slughere{}}%
+		{ch}{\def\slughere{\chslug}}%
+		{sec}{\def\slughere{\secslug}}%
+		{subsec}{\def\slughere{\subsecslug}}%
+	}%
+}
+\makeatother
+
+%% Url concatenation
+
+\newcommand{\urladd}[2]{%
+	\ifstrempty{#2}{%
+		#1%
+	}{%
+		#1/#2%
+	}%
+}%
+
+%% sec and subsec url defs
+
+\newcommand{\defsecurlandslug}[1]{%
+	\def\securl{%
+		\urladd{\ifdefined\churl\churl\else\bookurl\fi}%
+		{#1}%
+	}%
+	\def\secslug{%
+		\urladd{\ifdefined\chslug\chslug\fi}%
+		{#1}%
+	}%
+}
+
+\newcommand{\defsubsecurlandslug}[1]{%
+	\def\subsecurl{%
+		\urladd{\ifdefined\securl \securl\else%
+			\ifdefined\churl \churl\fi%
+		\fi}{#1}%
+	}%
+	\def\subsecslug{%
+		\urladd{\ifdefined\secslug\secslug\else%
+			\ifdefined\chslug\chslug\fi%
+		\fi}{#1}%
+	}%
+}
+
+\newcommand{\defexampleurlandslug}[1]{%
+  \def\exampleurl{%
+    \urladd{\ifdefined\subsecurl \subsecurl\else%
+      \ifdefined\securl \securl\else%
+        \ifdefined\churl \churl\fi%
+      \fi%
+    \fi}{#1}%
+  }%
+  \def\exampleslug{%
+    \urladd{\ifdefined\subsecslug\subsecslug\else%
+      \ifdefined\secslug\secslug\else%
+        \ifdefined\chslug\chslug\fi%
+      \fi%
+    \fi}{#1}%
+  }%
+}
+
+%% - utility for testing empty or novalue optional args
+
+\ExplSyntaxOn
+\DeclareExpandableDocumentCommand{\IfNoValueOrEmptyTF}{mmm}
+ {
+  \IfNoValueTF{#1}{#2}
+   {
+    \tl_if_empty:nTF {#1} {#2} {#3}
+   }
+ }
+\ExplSyntaxOff
+
+% %% - Section
+% \let\oldsection\section
+% \makeatletter
+% \RenewDocumentCommand{\section}{%
+% 	O{#7} % short title
+% 	O{} 	% versioned ts/ds
+%   O{}   % wherein
+%   O{}   % lab background empty/labbackground
+% 	m 		% id
+% 	m 		% hash
+% 	m 		% title
+% }{%
+%   % \ifinappendix%
+%   %   \renewcommand{\thesection}{\Alph{chapter}.\arabic{section}}%
+%   % \else%
+%   %   \renewcommand{\thesection}{\arabic{chapter}.\arabic{section}}%
+%   % \fi%
+%   \gdef\sectionhash{#6}%
+%   \gdef\subsectionhash{}%
+% 	\@ifstar{\oldsection*}{
+% 		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#7}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}%
+% 		\def\thisisa{sec}
+% 		\def\thissecversioned{#2}
+% 		\lecture[\thisshorttitle]{\xcapitalisewords{#7}}{#5}% Beamer
+% 		\defsecurlandslug{#5}% securl+secslug
+%     \IfNoValueOrEmptyTF{#4}{%
+%       \needspace{3\baselineskip}%
+%       \oldsection[\thisshorttitle]{\xcapitalisewords{#7}}%
+%       % \sectionpage%
+%     }{%
+%       \needspace{3\baselineskip}%
+%       \oldsection[\thisshorttitle~\texorpdfstring{\protect\labbackgroundicon}{ (lab background)}]{\xcapitalisewords{#7}~\labbackgroundicon}%
+%     }%
+%     \label{#6}%
+%     % \qrinline{#6}{#2}%
+% 	}
+% }
+% \makeatother
+
+% % - Subsection
+
+% \RequirePackage{needspace}%
+
+% \makeatletter
+% \NewDocumentCommand{\defthissubsecversioned}{m}{%
+% 	\IfEqCase{#1}{%
+% 		{ts}{%
+% 			\def\thissubsecversioned{ts}
+% 			\IfEqCase{\thissecversioned}{%
+% 				{ts}{\def\vinherited{y}}%
+% 				{ds}{\def\vinherited{n}}%
+%         {both}{\def\vinherited{n}}%
+% 				{}{\def\vinherited{n}}%
+% 			}%
+% 		}%
+% 		{ds}{
+% 			\def\thissubsecversioned{ds}
+% 			\IfEqCase{\thissecversioned}{%
+% 				{ts}{\def\vinherited{n}}%
+% 				{ds}{\def\vinherited{y}}%
+%         {both}{\def\vinherited{n}}%
+% 				{}{\def\vinherited{n}}%
+% 			}%
+% 		}%
+%     {both}{
+%       \def\thissubsecversioned{both}
+%       \IfEqCase{\thissecversioned}{%
+%         {ts}{\def\vinherited{n}}%
+%         {ds}{\def\vinherited{n}}%
+%         {both}{\def\vinherited{y}}%
+%         {}{\def\vinherited{n}}%
+%       }%
+%     }%
+% 		{}{%
+% 			\IfEqCase{\thissecversioned}{%
+% 				{ts}{\def\thissubsecversioned{ts}\def\vinherited{y}}%
+% 				{ds}{\def\thissubsecversioned{ds}\def\vinherited{y}}%
+%         {both}{\def\thissubsecversioned{both}\def\vinherited{y}}%
+% 				{}{\def\thissubsecversioned{}\def\vinherited{n}}%
+% 			}%
+% 		}%
+% 	}%
+% }%
+% \makeatother
+
+% \let\oldsubsection\subsection
+% \makeatletter
+% \RenewDocumentCommand{\subsection}{%
+% 	O{#6}	% short title
+% 	O{} 	% versioned ts/ds
+%   O{}   % wherein
+% 	m 		% id
+% 	m 		% hash
+% 	m 		% title
+% }{%
+% 	\@ifstar{\oldsubsection*{\xcapitalisewords{#6}}}{
+% 		\IfNoValueOrEmptyTF{#1}{\def\thisshorttitle{\protect\xcapitalisewords{#6}}}{\def\thisshorttitle{\protect\xcapitalisewords{#1}}}
+% 		\def\thisisa{subsec}
+% 		\defthissubsecversioned{#2}%
+% 		\defsubsecurlandslug{#4}% subsecurl+subsecslug
+%     \gdef\subsectionhash{#5}%
+%     \needspace{2\baselineskip}%
+%   	\oldsubsection[\thisshorttitle]{%\texorpdfstring{\protect\marginboxref{#5}{\thissubsecversioned}}{}
+%     \xcapitalisewords{#6}}%
+%     \subsectionpage%
+%     \nopagebreak%
+%     \IfNoValueOrEmptyTF{#3}{}{\whereinsubsec{#3}}%
+%     \nopagebreak%
+% 		% \insertversioned{\thissubsecversioned}{#5}{\vinherited}
+%     % \IfEq{\vinherited}{n}{%
+%     %   \IfEqCase{\thissubsecversioned}{%
+%     %     {}{}%
+%     %   }[\qrinline{#5}{\thissubsecversioned}]%
+%     % }%
+%     \nopagebreak%
+%     \label{#6}%
+%     \nopagebreak%
+% 	}
+% }
+% \makeatother
+
+% % - Subsubsection
+% \let\oldsubsubsection\subsubsection
+% % \renewcommand{\subsubsection}[1]{\oldsubsubsection{\protect\xcapitalisewords{#1}}}
+% \makeatletter
+% \RenewDocumentCommand{\subsubsection}{%
+%   s     % star
+%   O{#3} % short title
+%   m     % title
+% }{%
+%   \IfBooleanTF{#1}{\frametitle{\xcapitalisewords{#3}}}{
+%     \frametitle{\xcapitalisewords{#3}}%
+%   }
+% }
+% \makeatother
+
+% Pandoc accomodation
+
+\def\tightlist{} % ignore \tightlist commands inserted by pandoc in lists
+
+% URL and QR
+
+\RequirePackage{url}
+\makeatletter
+\def\Url@slashortwo{\mathchar`\/\@ifnextchar/{\kern-.3em}{\kern-.1em}}
+\def\Url@colonslash{\mathchar`\:\@ifnextchar/{\kern-.1em}{}}
+\def\Url@mslasher{\mathchar`\m\@ifnextchar/{\kern-.1em}{}}
+\def\Url@gslasher{\mathchar`\g\@ifnextchar/{\kern-.05em}{}}
+\g@addto@macro\UrlSpecials{\do\/{\Url@slashortwo}}
+\g@addto@macro\UrlSpecials{\do\:{\Url@colonslash}}
+\g@addto@macro\UrlSpecials{\do\m{\Url@mslasher}}
+\g@addto@macro\UrlSpecials{\do\g{\Url@gslasher}}
+\makeatother
+
+% \crefname{exturl}{url}{urls}
+\RequirePackage{qrcode}
+\newlength{\qrheight}
+\setlength{\qrheight}{1.0cm}
+\qrset{link, height=1\qrheight}
+\makeatletter
+\NewDocumentCommand{\myurl}{%
+  O{} % punctuation at end of url
+  O{} % safe/empty
+  m   % url
+  m   % hash
+}{%
+\noindent\makebox[\linewidth]{\url{#3}{#1}}% using url instead of href so we can get the nice kerning on the //
+}
+\makeatother
+
+
+\makeatletter
+\NewDocumentCommand{\myurlbottom}{%
+  s   % starred version that doesn't \idit
+  O{} % punctuation at end of url
+  O{} % safe/empty
+  m   % url
+  m   % hash
+}{%
+  \\ %
+  \unskip\noindent\makebox[\linewidth]{\url{\urladd{\bookurl}{#5}}#2}%
+  \qrunlinebottom{#5}{}%
+  \noindent % using url instead of href so we can get the nice kerning on the //
+  \IfBooleanTF{#1}{%star
+  }{% no star
+    \label{#5}\noindent
+  }%
+}
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\myurlinline}{%
+  s   % starred version doesn't \idit
+  m   % url
+  m   % hash
+}{%
+% \href{\urladd{\bookurl}{#3}}{\urladd{\bookurldisplay}{#3}}\ignorespaces% using url instead of href so we can get the nice kerning on the //
+\url{\urladd{\bookurl}{#3}}\ignorespaces%
+\IfBooleanTF{#1}{%star
+}{% no star
+\label{#3}\unskip\ignorespaces%
+}%
+}
+\makeatother
+
+% \newcommand{\myurlinline}[1]{%
+% 	\href{#1}{\small\ttfamily\path{#1}}%
+% }
+
+
+% \newcommand{\myurlsafe}[3][.]{%
+%   \\ %\marginnote[\qrcode{#2}]{\raggedleft \qrcode{#2}}
+%   \marginnote[%
+%     \href{\urladd{\bookurl}{#3}}{%
+%       \adjustbox{valign=t}{%
+%         \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#3}}%
+%         \hspace{2pt}%
+%         \begin{minipage}[c][\qrheight]{2em}\noindent
+%         \hashstyle{\faLink\\#3}
+%         \vfill
+%         \phantom{.}
+%         \end{minipage}%
+%       }%
+%     }%
+%   ]{%
+%     \hfill
+%     \href{\urladd{\bookurl}{#3}}{%
+%       \adjustbox{valign=t}{%
+%         \begin{minipage}[c][\qrheight]{2em}\noindent
+%         \raggedleft\hashstyle{\faLink\\#3}
+%         \vfill
+%         \phantom{.}
+%         \end{minipage}%
+%         \hspace{2pt}%
+%         \noindent\qrcode[height=\qrheight]{\urladd{\bookurl}{#3}}%
+%       }%
+%     }%
+%   }%
+%   \centerline{\href{\urladd{\bookurl}{#3}}{\small\texttt{\urladd{\bookurl}{#3}}}#1}
+%   \idit[exturl][][#2]{external-urls/#3}{#3}
+% }
+
+
+% target system TS and development system DS alternatives
+
+\RequirePackage[strict]{changepage} % to detect even/odd page
+
+%% Versioning
+
+% \def\ts{T1}
+% \def\ds{D1}
+
+%% convert hash short-slug to url
+\newcommand{\hashtourl}[1]{\bookurl/#1}
+
+%% hash styling
+\newcommand{\hashstyle}[1]{\footnotesize\textmd{\texttt{\uppercase{#1}}}}
+
+\RequirePackage{microtype} % for squishing letters together
+
+%% marginboxref
+\RequirePackage{fontawesome5} % cool icons, free
+% \RequirePackage[fixed]{fontawesome5}
+\newcommand{\tsstuff}{} % initialize
+\newcommand{\dsstuff}{} % initialize
+\newcommand{\bothstuff}{} % initialize
+\makeatletter
+\NewDocumentCommand{\marginboxref}{%
+  O{unsafe} % or safe
+	m 	% hash (short-slug)
+	m   % type ts/ds/both/empty
+}{%
+	\renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+	\renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#3}{%
+  	{}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{marginboxref}{Undefined second required argument #3 to marginboxref}{}]%
+  \IfEqCase{#1}{%
+    {unsafe}{%
+    	\marginpar[%
+    		\href{\hashtourl{#2}}{%
+    			\adjustbox{valign=t}{%
+            \color{black}%
+    				\noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+    				\hspace{2pt}%
+    				\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \hashstyle{\faLink\\#2}
+      				\vfill
+      				\iconnow
+            ]%
+    				\end{minipage}%
+    			}%
+    		}%
+    	]{%
+    		\hfill
+    		\href{\hashtourl{#2}}{%
+    			\adjustbox{valign=t}{%
+            \color{black}%
+    				\begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \raggedleft\hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+      				\raggedleft\hashstyle{\faLink\\#2}
+      				\vfill
+      				\iconnow
+            ]%
+    				\end{minipage}%
+    				\hspace{2pt}%
+    				\noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+    			}%
+    		}%
+    	}%
+    }%
+    {safe}{%
+      \marginnote[%
+        \href{\hashtourl{#2}}{%
+          \adjustbox{valign=t}{%
+            \color{black}%
+            \noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+            \hspace{2pt}%
+            \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \hashstyle{\faLink\\#2}
+              \vfill
+              \iconnow
+            ]%
+            \end{minipage}%
+          }%
+        }%
+      ]{%
+        \hfill
+        \href{\hashtourl{#2}}{%
+          \adjustbox{valign=t}{%
+            \color{black}%
+            \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+            \IfEqCase{#3}{%
+              {both}{%
+                \raggedleft\hashstyle{#2}
+                \vfill
+                \tsicon{\ts}\\
+                \dsicon{\ds}
+              }%
+            }[%
+              \raggedleft\hashstyle{\faLink\\#2}
+              \vfill
+              \iconnow
+            ]%
+            \end{minipage}%
+            \hspace{2pt}%
+            \noindent\qrcode[height=\qrheight]{\hashtourl{#2}}%
+          }%
+        }%
+      }%
+    }%
+  }%
+}
+\makeatother
+
+\RequirePackage{wrapfig}%
+\setlength{\wrapoverhang}{0pt}%
+
+\makeatletter
+\NewDocumentCommand{\qrinline}{%
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}%
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}%
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}%
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrinline}{Undefined second required argument #1 to qrinline}{}]%
+  \nopagebreak%
+  \begin{wrapfigure}{r}{1.6cm}%
+    \nopagebreak%
+    \vspace{-1.3cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \nopagebreak%
+        \color{black}%
+        \hfill%
+        \nopagebreak%
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent%
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}%
+            \vfill%
+            \tsicon{\ts}\\%
+            \dsicon{\ds}%
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}%
+          \vfill%
+          \iconnow%
+        ]%
+        \end{minipage}%
+        \nopagebreak%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \nopagebreak%
+    \vskip -\baselineskip%
+    \nopagebreak%
+  \end{wrapfigure}%
+  \nopagebreak%
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qronline}{% baseline-aligned
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qronline}{Undefined second required argument #1 to qronline}{}]%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+      \color{black}%
+      \hfill
+      \raisebox{\depth}{%
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      }%
+      % }%
+    % }%
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrunline}{% top aligned, wrapped below
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrunline}{Undefined second required argument #1 to qrunline}{}]%
+  \begin{wrapfigure}{r}{1.6cm}
+    % \vspace{-1.575cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \vskip -1.5\baselineskip
+        \color{black}%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+  % \vskip -\baselineskip
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrunlinebottom}{% top aligned, wrapped below
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrunlinebottom}{Undefined second required argument #1 to qrunlinebottom}{}]%
+  % \setlength{\intextsep}{0pt}
+  % \begin{wrapfigure}{r}{1.6cm}
+    % \vspace{-1.575cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \color{black}%
+        \vskip -1.7\baselineskip%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    % \vskip -2\baselineskip
+    % \vspace{-1\baselineskip}
+  % \end{wrapfigure}
+  % \unskip
+  % \vspace{-1\baselineskip}
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrinlineproblems}{% for Problems sections
+  m   % hash (short-slug)
+  m   % type ts/ds/both/empty
+}{%
+  \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}
+  \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}
+  \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}
+  \IfEqCase{#2}{%
+    {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {ts}{\tsstuff}%
+    {ds}{\dsstuff}%
+    {both}{\bothstuff}%
+  }[\PackageError{qrinlineproblems}{Undefined second required argument #1 to qrinlineproblems}{}]%
+  \begin{wrapfigure}{r}{1.6cm}
+    \vspace{-1.75cm}%
+    % \href{\hashtourl{#1}}{%
+      % \adjustbox{valign=b}{%
+        \color{black}%
+        \hfill
+        \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+        \IfEqCase{#2}{%
+          {both}{%
+            \raggedleft\hashstyle{#1}
+            \vfill
+            \tsicon{\ts}\\
+            \dsicon{\ds}
+          }%
+        }[%
+          \raggedleft\hashstyle{\faLink\\#1}
+          \vfill
+          \iconnow
+        ]%
+        \end{minipage}%
+        \hspace{2pt}%
+        \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+      % }%
+    % }%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+}%
+\makeatother
+
+\makeatletter
+\NewDocumentCommand{\qrinlinech}{%
+  m   % hash (short-slug)
+}{%
+  \begin{wrapfigure}{r}{1.6cm}
+    \vspace{-5.7cm}%
+    \color{black}%
+    \hfill
+    \begin{minipage}[c][\qrheight]{\widthof{\texttt{XX}\hspace{4pt}}}\noindent
+    \raggedleft\hashstyle{\faLink\\#1}
+    \vfill
+    \phantom{.}
+    \end{minipage}%
+    \hspace{2pt}%
+    \noindent\href{\hashtourl{#1}}{\qrcode[height=\qrheight]{\hashtourl{#1}}}%
+    \vskip -\baselineskip
+  \end{wrapfigure}
+}%
+\makeatother
+
+% Boxes, general
+
+%% Prevent boxes from breaking with just a little at the end of a page
+% usage \nobottom{%
+% \begin{mybox}
+%     Sample text.
+% \end{mybox}}
+\newsavebox{\mybottombox} % Box to save the text of the command
+\newlength{\mybottomlength} % The length of our text inside the command
+\newlength{\availafter} % The available length left on the page after placing our text
+% Optional argument is the minimum length after the nobottom text for not pagebreak. Change it to your needs
+\newcommand{\nobottom}[2][60pt]{\savebox{\mybottombox}{\vbox{#2}}\setlength{\mybottomlength}{\ht\mybottombox}%
+\setlength{\availafter}{\dimexpr\textheight-\mybottomlength-\pagetotal\relax}\ifdim\availafter<#1%
+\pagebreak\noindent\usebox{\mybottombox}%
+\else%
+\noindent\usebox{\mybottombox}%
+\fi%
+}%
+
+% Attention Info Box
+
+\RequirePackage{tikz}
+\RequirePackage[skins,breakable,many,minted]{tcolorbox}
+	\tcbset{colback=white}
+	\tcbuselibrary{minted}
+	\tcbuselibrary{theorems}
+\RequirePackage[framemethod=TikZ]{mdframed}
+	\mdfsetup{%
+		innertopmargin=0\baselineskip,
+		innerbottommargin=1\baselineskip
+	}
+
+\newtcolorbox[auto counter, number within=section]{infobox}[2][]{
+  boxxstyle,
+  title={Box \thetcbcounter\quad #2},
+  after app={\suppressfloats[t]},
+  #1
+}
+
+% \newcounter{infobox}[chapter]
+% \renewcommand{\theinfobox}{\thechapter.\arabic{infobox}}
+% \newenvironment{infobox}[1][]{%
+% 	\stepcounter{infobox}%
+% 	\begin{tcolorbox}[boxxstyle,title={Box \theinfobox\quad #1}]%
+%   \unskip%
+% }{%
+%   \end{tcolorbox}
+%   \suppressfloats[t]
+% }
+
+% \newcommand{\thereadingbox}{\thechapter.\arabic{infobox}}
+\newenvironment{readingbox}[1][]{%
+  % \stepcounter{infobox}%
+  \begin{infobox}[unbreakable]{#1}%
+  \unskip%
+}{%
+  \end{infobox}
+}
+
+% Further reading list
+
+\RequirePackage{etoolbox}
+
+% \RequirePackage{enumitem}
+\newcommand{\freadinglist}[2][]{%
+\citereset%
+\begin{infobox}[label=#1]{Further Reading}%
+\unskip%
+\begin{itemize}%
+\unskip%
+\renewcommand*{\do}[1]{\item ##1}% How to process each item
+% \renewcommand*{\do}[1]{\nextitem \item \fullcite{##1}} % was
+\docsvlist{#2}% Process list
+\end{itemize}
+\end{infobox}
+}
+
+% itemize and enumerate
+
+% \RequirePackage{enumitem}
+% \setlist{itemsep=0pt,parsep=0pt,topsep=0pt,listparindent=\parindent}
+% \setlist[enumerate,1]{label=\arabic*.,ref=\arabic*}
+% \setlist[enumerate,2]{label=\alph*.,ref=\theenumi\alph*}
+% \setlist[enumerate,3]{label=\roman*.,ref=\theenumii.\roman*}
+% \setlist[itemize,1]{label={\color{c1}\textbullet},ref={\color{c1}\textbullet}}
+% \setlist[itemize,2]{label={\color{c1}\textbullet},ref={\color{c1}\textbullet}}
+% \setlist[itemize,3]{label={\color{c1}\textbullet},ref={\color{c1}\textbullet}}
+
+% Theorems
+
+% for dotted frame lines
+\makeatletter
+\tikzset{
+    dot diameter/.store in=\dot@diameter,
+    dot diameter=3pt,
+    dot spacing/.store in=\dot@spacing,
+    dot spacing=10pt,
+    dots/.style={
+        line width=\dot@diameter,
+        line cap=round,
+        dash pattern=on 0pt off \dot@spacing
+    }
+}
+\makeatother
+
+\tikzset{
+  boxlines/.style={
+    line width=1pt,line cap=round,rounded corners=1pt
+  },
+  mydots/.style={
+    dot diameter=1pt, dot spacing=6pt, dots
+  }
+}
+\def\boxlinesoff{.75pt}
+\def\boxlinesofftwo{1.75pt}
+\def\boxlinesoffthree{2pt}
+
+\let\svpar\par
+\edef\svparskip{\the\parskip}
+\def\revertpar{\svpar\setlength\parskip{\svparskip}\let\par\svpar}
+\def\noparskip{\leavevmode\setlength\parskip{0pt}%
+  \def\par{\svpar\let\par\revertpar}}
+
+\tcbset{
+  defstyle/.style={%
+    fonttitle=\bfseries,
+    %fontupper=\slshape,
+    arc=0mm,
+    colback=blue!5!white,colframe=blue!75!black},
+  boxstyle/.style={%
+    empty,% Empty previously set parameters
+    % Attaching a box requires an overlay
+    attach boxed title to top left,
+    % Ensures proper line breaking in longer titles
+    minipage boxed title,
+    % (boxed title style requires an overlay)
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=0pt,bottom=2pt,overlay={}},
+    coltitle=c1,
+    fonttitle=\bfseries,
+    % before=\par\medskip\noindent,
+    parbox=false, % should allow for paragraphs but doesn't seem to work
+    % before upper=\setlength{\parskip}{1\baselineskip},
+    before upper={\setlength{\parindent}{0pt}\parindent0em\unskip\noindent},
+    boxsep=0pt,
+    left=4.5pt,
+    right=4.5pt,
+    top=4.5pt,
+    breakable,
+    pad at break=0mm,
+    before skip=7pt, after skip=7pt,
+  },
+  examplestyle/.style={%
+    boxstyle,
+    % background color white:
+    % enhanced,
+    % opacityback=1,
+    % colback=white,
+    % font color white:
+    coltext=white,
+    fonttitle=\bfseries\linespread{.7},
+    title={Example \theexample},
+    % before lower=\marginnote{{\color{c1}\sffamily\bfseries Problem Solution}},
+    % before upper={\marginnote{{\color{c2}\sffamily\bfseries Problem Statement}}[1\baselineskip] \csname @totalleftmargin\endcsname0pt \noparskip}, % Use instead of parbox=true. This ensures parskip is inherited by box.
+    % Handles box when it exists on one page only
+    overlay unbroken={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east);
+      % highlight above tcblower
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      },
+    % Handles multipage box: first page
+    overlay first={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      % Handles tcblower state (tricky!)
+      \ifcase\tcbsegmentstate%
+        % 0 = Box contains only an upper part
+        \coordinate (c1) at ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          (c1);
+        % \draw[c2,boxlines,mydots]
+        %   (c1) --
+        %   (c1 |- frame.south west);
+        \coordinate (c2) at ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          (c2);
+      \or%
+        % 1 = Box contains an upper and a lower part
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesofftwo]frame.north east) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      \else%
+        % 2 = Box contains only a lower part
+        % can't happen here
+      \fi%
+      },
+    % Handles multipage box: middle page
+    overlay middle={%%
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % Handles tcblower state (tricky!)
+      \ifnumequal{\tcbsegmentstate}{0}{%
+        % 0 = Box contains only an upper part
+        \coordinate (c0) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \coordinate (c1) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) -- (c1);
+        \draw[c2,boxlines]
+          (c1) -- (c1 |- frame.south west);
+        \coordinate (c3) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \coordinate (c4) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+      }{\ifnumequal{\tcbsegmentstate}{1}{%
+        % 1 = Box contains an upper and a lower part
+        \coordinate (c0) at ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) --
+          ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
+        \draw[c2,boxlines]
+          ([xshift=\boxlinesoffthree]segmentation.west) --
+          ([xshift=18.5pt]segmentation.west);
+        \coordinate (c1) at ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \draw[c2,boxlines]
+          (c1) --
+          ([xshift=\boxlinesofftwo]frame.north east |- segmentation.east);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesoffthree]segmentation.east) --
+          ([xshift=-18.5pt]segmentation.east);
+      }{\ifnumequal{\tcbsegmentstate}{2}{%
+        % 2 = Box contains only a lower part
+        % can't happen here
+      }}}%
+    },
+    % Handles multipage box: last page
+    overlay last={%
+      % \draw[c1,line width=3pt,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east); },%
+  },
+  boxxstyle/.style={
+    boxstyle,
+    fonttitle=\linespread{.7},
+    before upper={\color{white}},
+    % Handles box when it exists on one page only
+    overlay unbroken={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=20pt]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-20pt]frame.south east);
+      },
+    % Handles multipage box: first page
+    overlay first={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]title.south west) --
+        ([xshift=\boxlinesoff]title.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.north east) --
+        ([xshift=-\boxlinesoff]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      },
+    % Handles multipage box: middle page
+    overlay middle={%%
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff]frame.north west) --
+      %   ([xshift=\boxlinesoff,yshift=-18pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.south west);
+      % \draw[c1,boxlines,mydots]
+      %   ([xshift=\boxlinesoff,yshift=24pt]frame.south west) --
+      %   ([xshift=\boxlinesoff]frame.south west);
+      \draw[c1,boxlines]
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.south east);
+      % Handles tcblower state (tricky!)
+      \ifcase\tcbsegmentstate%
+        % 0 = Box contains only an upper part
+        \coordinate (c0) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.north west);
+        \coordinate (c1) at
+          ([xshift=-\boxlinesofftwo,yshift=0pt]frame.south west);
+        \draw[c2,boxlines]
+          ([xshift=-\boxlinesofftwo]frame.north west) -- (c0);
+        \draw[c2,boxlines]
+          (c0) -- (c1);
+        \draw[c2,boxlines]
+          (c1) -- (c1 |- frame.south west);
+        \coordinate (c3) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.north east);
+        \coordinate (c4) at
+          ([xshift=\boxlinesofftwo,yshift=0pt]frame.south east);
+        \draw[c2,boxlines]
+          (c3) -- (c4);
+      \fi%
+    },
+    % Handles multipage box: last page
+    overlay last={%
+      \draw[c1,boxlines]
+        ([xshift=20pt]frame.south west) --
+        ([xshift=\boxlinesoff]frame.south west) --
+        ([xshift=\boxlinesoff,yshift=0pt]frame.north west);
+      \draw[c1,boxlines]
+        ([xshift=-20pt]frame.south east) --
+        ([xshift=-\boxlinesoff]frame.south east) --
+        ([xshift=-\boxlinesoff,yshift=0pt]frame.north east);
+    }
+  },
+  listboxstyle/.style={
+    boxxstyle,
+    before upper={\setlength{\parindent}{0pt}\parindent0em%
+      \everypar{{\setbox0\lastbox}\@minipagefalse\everypar{}}},
+    before skip=7pt, after skip=7pt,
+  }
+}
+\let\definition\relax
+\let\enddefinition\relax
+\let\theorem\relax
+\let\endtheorem\relax
+\let\corollary\relax
+\let\endcorollary\relax
+\newtcbtheorem[auto counter,number within=section,crefname={definition}{definitions},Crefname={Definition}{Definitions}]%
+{definition}{Definition}{boxxstyle}{def}
+\newtcbtheorem[use counter from=definition,crefname={theorem}{theorems},Crefname={Theorem}{Theorems}]%
+{theorem}{Theorem}{boxxstyle}{thm}
+\newtcbtheorem[use counter from=definition,crefname={corollary}{corollaries},Crefname={Corollary}{Corollaries}]%
+{corollary}{Corollary}{boxxstyle}{cor}
+\makeatletter
+\newcommand\tcb@cnt@Definitionautorefname{definition}
+\newcommand\tcb@cnt@Theoremautorefname{theorem}
+\newcommand\tcb@cnt@Corollaryautorefname{corollary}
+\crefformat{tcb@cnt@Definition}{example~#2#1#3}
+\Crefformat{tcb@cnt@Definition}{Example~#2#1#3}
+\makeatother
+
+% Formatted output (code from Jupyter notebook)
+
+\newboolean{insideformattedoutput}
+\setboolean{insideformattedoutput}{false}
+
+\makeatletter
+\NewDocumentEnvironment{formattedoutput}{%
+}{%
+  % \needspace{3\baselineskip}%
+  \setboolean{insideformattedoutput}{true}
+  \begin{tcolorbox}[blanker, before skip=-4.5pt,after skip=4pt,left=18pt,top=2pt,bottom=2pt,borderline west={14pt}{0pt}{gray!50!white},%grow to left by=-\parindent,
+  overlay={%
+  \begin{tcbclipframe}
+  \coordinate (X) at ([xshift=2pt]frame.west);
+  \coordinate (Y) at ([xshift=2pt,yshift=-2pt]frame.north west);
+  \coordinate (Z) at ([xshift=12pt]frame.west);
+  % \fill[shading=ball,ball color=blue!50!white,opacity=0.5] (X) circle (1mm);
+  % \node[black,anchor=west] at (X) {$\rightarrow$};
+  \draw[->,white, line width=1pt, line cap=round, rounded corners=1pt] (Y) |- (Z);
+  \end{tcbclipframe}}]%
+  % $\rightarrow$ %
+}{
+  \end{tcolorbox}
+  \setboolean{insideformattedoutput}{false}
+}
+\makeatother
+
+\makeatletter
+\NewDocumentEnvironment{mintedwrapper}{%
+}{%
+  \begingroup
+  \ifthenelse{\boolean{insideformattedoutput}}{%
+    \setminted[text]{
+      autogobble,
+      fontsize=\small,
+      frame=none,
+      framerule=0pt,
+      % rulecolor=\color{gray!50},
+      framesep=4pt,
+      % xleftmargin=\parindent,
+      breaklines=true
+    }
+  }{%
+    \begin{tcolorbox}
+  }%
+}{
+  \ifthenelse{\boolean{insideformattedoutput}}{%
+  }{%
+    \end{tcolorbox}
+  }%
+  \endgroup
+}
+\makeatother
+
+% Section title slides
+
+\AtBeginSubsection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\bfseries\xcapitalisewords{\subsecname}\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+% Tables
+
+\RequirePackage{booktabs}
+
+% Keywords
+
+\newcommand{\keyword}[1]{%
+		{\color{c1}\textbf{#1}}%
+}%
+
+%% Algorithm captions
+
+\makeatletter
+\NewExpandableDocumentCommand{\algcaption}{%
+  m% id
+  m% caption
+}{%
+  \ifdefined\issolution % solutions manual
+    \IfInsideSolutionTF{}{%
+      \extrefalg{#1}%
+    }%
+  \fi %
+  \caption{#2}
+  \ifdefined\issolution % in solutions manual
+    \IfInsideSolutionT{% if in exercise SOLUTION, give regular label
+      \label{#1} 
+    }% otherwise don't label it
+  \else % idalg if not in solutions manual
+    % \idalg{#1}{#2}
+  \fi %
+}%
+\makeatother
+
+\makeatletter
+\newcommand{\extreffig}[1]{%
+  \@namedef{thefigure}{\ref{#1}}% always going to be a figure
+}
+\makeatother
+
+\makeatletter
+\newcommand{\extrefalg}[1]{%
+  \@namedef{thealgorithm}{\ref{#1}}% always going to be an algorithm
+}
+\makeatother
+
+\makeatletter
+\newcommand{\extreftab}[1]{%
+  \@namedef{thetable}{\ref{#1}}% always going to be a table
+}
+\makeatother
+
+
+\usepackage[subpreambles=true,sort=true]{standalone} % for standalone tikz figures
+
+% Ignore index entries:
+\NewDocumentCommand{\myindex}{%
+  s     % star for bold (primary entry)
+  O{}   % start/stop/empty
+  O{}   % lab (L) or not
+  O{}   % how index entry should appear
+  O{}   % under entry
+  m     % index/index as
+}{ %
+% Ignore all inputs to this function and do nothing
+}
+
+% Examples
+
+\newcounter{example}
+
+\newtcolorbox[use counter=example]{examplebox}[1][]{
+  examplestyle,
+  #1 % options
+}
+
+\makeatletter
+\NewDocumentEnvironment{myexample}{%
+  O{}   % versioned ts/ds
+  m     % id
+  m     % hash
+}{%
+  % \defthisexampleversioned{#1}%
+  \defexampleurlandslug{#2}% url+slug
+  % \stepcounter{example}
+  \needspace{3\baselineskip}%
+  \begin{examplebox}[
+    title={Example \theexample},%
+    label=#3%
+  ]%
+}{
+  \end{examplebox}
+}
+\makeatother
