@@ -37,6 +37,8 @@
 \usepackage{textcomp} % for \textservicemark command
 \usepackage{unicode-math}
 
+% Math macros
+\usepackage{common/styles-tex/bookmathmacros}
 
 % Cleverref
 
@@ -380,8 +382,10 @@
 \progressbar@pbht=1pt
 
 % the progress bar
+
 \usepackage{pgfplots}
 \usetikzlibrary{fpu}
+
 \def\progressbar@progressbar{%
 
     \progressbar@tmpcounta=\insertframenumber

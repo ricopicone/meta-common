@@ -265,31 +265,7 @@
 % }
 
 % Algorithms
-
-\RequirePackage{algorithm}
-\RequirePackage[%
-  italicComments=false,%
-  rightComments=true,%
-  commentColor=light-gray,%
-  % beginComment=%
-]{algpseudocodex}
-\tikzset{algpxIndentLine/.style={draw,line width=.5pt,gray,line join=round,line cap=round,rounded corners=3pt}}
-%% \def\Vhrulefill{\leavevmode\leaders\hrule height 0.7ex depth \dimexpr0.4pt-0.7ex\hfill\kern0pt}
-% \RequirePackage{xhfill}
-% \algrenewcomment[2][.5\linewidth]{%
-% \quad\xrfill[.5ex]{.5pt}[gray]\makebox[#1][l]{\color{gray}#2} % kinda worked but linespread got messed up
-% }%
-\let\oldComment\Comment
-\renewcommand{\Comment}[2][.5\linewidth]{\oldComment{#2}}
-\let\oldState\State
-\usepackage{mfirstuc}%
-% \MFUblocker{\NoCaseChange}%
-\MFUexcl{\textbf}
-\renewcommand{\State}[1]{\oldState{\makefirstuc{#1}}} % this caused problems with arguments that start with commands or math ... going to try to manually capitalize the first letter instead
-
-\newenvironment{algorithmcenter}
- {\setlength{\textfloatsep}{0pt}\setlength{\intextsep}{0pt}\parskip=0pt\par\vspace{.5\baselineskip}\centering}
- {\par\vspace{.5\baselineskip}}
+\input{./common/styles-tex/bookalgorithms.sty}  % Load the algorithm styles
 
 % Code listings
 
@@ -446,8 +422,8 @@
   listing only,
   boxxstyle,
   fonttitle=\small,
-  title={{Listing \thetcbcounter} #3},
-  list entry={\protect\numberline{\thetcbcounter}#3},
+  title={{Listing \thelisting} #3},
+  list entry={\protect\numberline{\thelisting}#3},
   myminted/#2,
   #1,
   label=#4,
@@ -461,13 +437,29 @@
   listing only,
   boxxstyle,
   fonttitle=\small,
-  title={{Listing \thetcbcounter} #3},
-  list entry={\protect\numberline{\thetcbcounter}#3},
+  title={{Listing \thelisting} #3},
+  list entry={\protect\numberline{\thelisting}#3},
   myminted/#2,
   #1,
   label=#4,
   floatplacement=h,
   float=#5}
+% -- Redefine the listingsbox environment as a wrapper for the old listingsbox environment that allows for an \idit call to save the listing caption to the json file with the hash just the same as the label.  The new environment should have the same optional and mandatory arguments as the old environment.
+\let\oldlistingsbox\listingsbox
+\let\endoldlistingsbox\endlistingsbox
+\RenewDocumentEnvironment{listingsbox}{m m m}{%
+  \oldlistingsbox{#1}{#2}{#3}%
+}{\endoldlistingsbox %
+\idit[listing][#2]{#3}{#3}%
+}
+% -- Redefine the listingsboxfloat environment as a wrapper for the old listingsboxfloat environment that allows for an \idit call to save the listing caption to the json file with the hash just the same as the label.  The new environment should have the same optional and mandatory arguments as the old environment.
+\let\oldlistingsboxfloat\listingsboxfloat
+\let\endoldlistingsboxfloat\endlistingsboxfloat
+\RenewDocumentEnvironment{listingsboxfloat}{m m m m}{%
+  \oldlistingsboxfloat{#1}{#2}{#3}{#4}%
+}{\endoldlistingsboxfloat
+\idit[listing][#2]{#3}{#3}%
+}
 % -- suppress italics
 \AtBeginEnvironment{listingsbox}{\let\itshape\relax}
 \AtBeginEnvironment{listingsboxfloat}{\let\itshape\relax}
@@ -1223,6 +1215,8 @@
 \Crefformat{tcb@cnt@Lemma}{Lemma~#2#1#3}
 \crefformat{tcb@cnt@proposition}{proposition~#2#1#3}
 \Crefformat{tcb@cnt@Proposition}{Proposition~#2#1#3}
+\crefformat{tcb@cnt@Definition}{example~#2#1#3}
+\Crefformat{tcb@cnt@Definition}{Example~#2#1#3}
 \makeatother
 
 % target system TS and development system DS alternatives
@@ -1772,109 +1766,7 @@
 \ExplSyntaxOff
 
 % - Automatic capitalization in titles
-%   As much as possible configured for Chicago Manual of Style §§ 8.155-8.165
-\RequirePackage{mfirstuc}%
-% -- pdf bookmarks
-\pdfstringdefDisableCommands{%
-  \let\capitalisewords\MFUsentencecase
-  \let\makefirstuc\MFUsentencecase
-}
-% -- exclusions
-\MFUexcl{\NoCaseChange}%
-\MFUexcl{\texttt}% exclude code
-\MFUexcl{\mc}% exclude C code
-% -- hyphenation
-\MFUhyphentrue % capitalize after hyphen
-% -- special
-\gMFUnocap{myRIO}%
-\gMFUnocap{z-Transform}%
-\gMFUnocap{Analog-to-Digital}%
-\gMFUnocap{Digital-to-Analog}%
-% -- articles
-\gMFUnocap{the}%
-\gMFUnocap{a}%
-\gMFUnocap{an}%
-% -- conjunctions
-\gMFUnocap{and}%
-\gMFUnocap{but}%
-\gMFUnocap{for}%
-\gMFUnocap{or}%
-\gMFUnocap{nor}%
-% -- prepositions
-\gMFUnocap{aboard}
-\gMFUnocap{about}
-\gMFUnocap{above}
-\gMFUnocap{across}
-\gMFUnocap{after}
-\gMFUnocap{against}
-\gMFUnocap{along}
-\gMFUnocap{amid}
-\gMFUnocap{among}
-\gMFUnocap{anti}
-\gMFUnocap{around}
-\gMFUnocap{as}
-\gMFUnocap{at}
-\gMFUnocap{before}
-\gMFUnocap{behind}
-\gMFUnocap{below}
-\gMFUnocap{beneath}
-\gMFUnocap{beside}
-\gMFUnocap{besides}
-% \gMFUnocap{between}
-\gMFUnocap{beyond}
-\gMFUnocap{but}
-\gMFUnocap{by}
-\gMFUnocap{concerning}
-\gMFUnocap{considering}
-\gMFUnocap{despite}
-\gMFUnocap{down}
-\gMFUnocap{during}
-\gMFUnocap{except}
-\gMFUnocap{excepting}
-\gMFUnocap{excluding}
-\gMFUnocap{following}
-\gMFUnocap{for}
-\gMFUnocap{from}
-\gMFUnocap{in}
-\gMFUnocap{inside}
-\gMFUnocap{into}
-\gMFUnocap{like}
-\gMFUnocap{minus}
-\gMFUnocap{near}
-\gMFUnocap{of}
-\gMFUnocap{off}
-\gMFUnocap{on}
-\gMFUnocap{onto}
-\gMFUnocap{opposite}
-\gMFUnocap{outside}
-\gMFUnocap{over}
-\gMFUnocap{past}
-\gMFUnocap{per}
-\gMFUnocap{plus}
-\gMFUnocap{regarding}
-\gMFUnocap{round}
-\gMFUnocap{save}
-\gMFUnocap{since}
-\gMFUnocap{than}
-\gMFUnocap{through}
-\gMFUnocap{to}
-\gMFUnocap{toward}
-\gMFUnocap{towards}
-\gMFUnocap{under}
-\gMFUnocap{underneath}
-\gMFUnocap{unlike}
-\gMFUnocap{until}
-\gMFUnocap{up}
-\gMFUnocap{upon}
-\gMFUnocap{versus}
-\gMFUnocap{via}
-\gMFUnocap{with}
-\gMFUnocap{within}
-\gMFUnocap{without}
-% -- other/multiple parts of speech
-% \gMFUnocap{to}% already included
-% \gMFUnocap{as}% already included
-
+\input{./common/styles-tex/capitalization.sty}
 
 % - Chapter
 \let\oldchapter\chapter
@@ -2435,7 +2327,7 @@
 
 \makeatletter
 \NewDocumentCommand{\idit}{%
-	O{page} % type: page/chapter/section/subsection/resource/resource-digital/lab/problem/labproblem/exturl
+	O{page} % type: page/chapter/section/subsection/resource/resource-digital/lab/problem/labproblem/exturl/figure/table/example/listing
 	O{} 		% title
 	O{} 		% url
 	O{}			% versioned ts/ds/empty
@@ -2449,11 +2341,13 @@
       \IfEq{#1}{resource-digital}{\reslabeler{#7}}{%
         \IfEq{#1}{exturl}{\label{#7}}{%
           \IfEq{#1}{example}{}{% example labeled with tcolorbox
-            \ifinappendix%
-              \label[appendix]{#7}% if there's trouble on the website from this, we'll have to separately handle subappendix, subsubappendix, and subsubsubappendix
-            \else%
-              \label[#1]{#7}%
-            \fi%
+            \IfEq{#1}{listing}{\label{#6}}{% listing labeled with tcolorbox
+              \ifinappendix%
+                \label[appendix]{#7}% if there's trouble on the website from this, we'll have to separately handle subappendix, subsubappendix, and subsubsubappendix
+              \else%
+                \label[#1]{#7}%
+              \fi%
+            }%
           }%
         }%
       }%
@@ -2473,6 +2367,7 @@
   \def\idtitle{\unexpanded{#2}}% default: don't expand macros
   \def\theproblemifapplicable{}% default: so problem-num is empty if not a problem
   \def\theexampleifapplicable{}% default: so example-num is empty if not an example
+  \def\thelistingifapplicable{}% default: so listing-num is empty if not a listing
   \IfEqCase{#1}{%
     {problem}{% regular problem
       \def\idtitle{#2}%
@@ -2485,6 +2380,9 @@
     {example}{%
       \def\idtitle{#2}%
       \def\theexampleifapplicable{\theexample}% example number
+    }%
+    {listing}{% listing
+      \def\thelistingifapplicable{\thelisting}% listing number
     }%
   }%
   \ifdefined\issolution
@@ -2507,10 +2405,11 @@
 		"p": "\thepage",
     "problem-num": "\theproblemifapplicable",
     "example-num": "\theexampleifapplicable",
+    "listing-num": "\thelistingifapplicable",
     "wherein": "\unexpanded{#5}" \br,
 	}%
   \fi
-  \unskip\ignorespaces%
+  \ignorespaces%
   \@esphack%
 }%
 \makeatother
@@ -2592,6 +2491,32 @@
 }
 \makeatother
 
+% idalg
+
+\makeatletter
+\DeclareDocumentCommand{\idalg}{%
+  m% id
+  m% caption
+}{%
+  \begingroup%
+  \label{#1}
+  \ifdefined\issolution
+  \else
+  \iwrite{"#1": \bl
+    "type": "algorithm",
+    "caption": "\unexpanded{#2}",
+    "number": "\thealgorithm",
+    "ch": "\thechapter",
+    "sec": "\thesection",
+    "subsec": "\thesubsection",
+    "p": \thepage \br,
+  }%
+  \fi
+  \endgroup%
+}
+\makeatother
+
+
 % Tables
 
 \RequirePackage{etoolbox}
@@ -2628,6 +2553,35 @@
   }%
   \fi
   \endgroup%
+}
+\makeatother
+
+%% Algorithm captions
+
+\makeatletter
+\NewExpandableDocumentCommand{\algcaption}{%
+  m% id
+  m% caption
+}{%
+  \ifdefined\issolution % solutions manual
+    \IfInsideSolutionTF{}{%
+      \extrefalg{#1}%
+    }%
+  \fi %
+  \caption{#2}
+  \ifdefined\issolution % in solutions manual
+    \IfInsideSolutionT{% if in exercise SOLUTION, give regular label
+      \label{#1} 
+    }% otherwise don't label it
+  \else % idalg if not in solutions manual
+    \idalg{#1}{#2}
+  \fi %
+}%
+\makeatother
+
+\makeatletter
+\newcommand{\extrefalg}[1]{%
+  \@namedef{thealgorithm}{\ref{#1}}% always going to be an algorithm
 }
 \makeatother
 
