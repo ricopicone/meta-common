@@ -51,9 +51,9 @@ def nth_previous_version(file, n):
     # Check if the file is in a git repository
     git_dir = None
     directory = os.path.dirname(file)
-    if directory == '':
-        directory = '.'
     while directory != '/':  # Stop at the root directory
+        if directory == '':
+            directory = '.'
         if '.git' in os.listdir(directory):
             git_dir = directory
             break
@@ -64,6 +64,7 @@ def nth_previous_version(file, n):
     # Get the path of the file relative to the git directory
     file = os.path.relpath(file, git_dir)
     # Get the contents of the nth previous version of the file
+    print(f"Getting {n}th previous version of {file} in {git_dir} ...")
     command = f"git -C {git_dir} show HEAD~{n}:{file}"
     contents = os.popen(command).read()
     return contents
