@@ -1895,6 +1895,7 @@ local function exampler(el)
     if not v then v = '' end
     -- Get the example number from the book json
     local example_number = book_value(text_version,hash,"example-num")
+    if example_number == nil then example_number = "" end
     new = pandoc.Div(
       pandoc.RawBlock('html',
         "<div class='example-title'>\n"..
