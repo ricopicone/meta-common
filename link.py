@@ -72,11 +72,11 @@ def nth_previous_version(file, n):
 # Define a function that returns the last common ancestor of two files in their respective git histories. The function should return the contents of the last common ancestor of the two files, or None if the files do not have a common ancestor.
 def last_common_ancestor(file1, file2):
     # Alternately iterate through the git histories of the two files, starting from the most recent version, until a common ancestor is found
-    for n1 in range(0, 100):  # Limit the number of iterations to 100
+    for n1 in range(0, 30):  # Limit the number of iterations to 30
         contents1 = nth_previous_version(file1, n1)
         if contents1 is None:
             return None
-        for n2 in range(0, 100):
+        for n2 in range(0, 30):
             contents2 = nth_previous_version(file2, n2)
             if contents2 is None:
                 return None
@@ -353,7 +353,8 @@ for dest_dir, src_dir in directories.items():
                 # Create the hard link
                 if not args.dry_run:
                     merge_files(dest=src, src=dest)  # Merge the files into src
-                    os.remove(dest)  # Remove the destination file
+                    if os.path.exists(dest):
+                        os.remove(dest)  # Remove the destination file
                     os.link(src, dest)  # Create the hard link
                 else:
                     print(f"Would create hard link at {dest} to {src}")
