@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(description='Create hard links for files and di
 # Infect meta or mesa (non-meta) files and directories
 parser.add_argument('--infect-meta', action='store_true', help='Infect meta files and directories')
 parser.add_argument('--infect-mesa', action='store_true', help='Infect mesa files and directories')
-# Overwrite existing files with merged hard links
-parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files with merged hard links')
+# Merge files if they are different (default is to replace the destination file with the source file)
+parser.add_argument('--merge', action='store_true', help='Merge files if they are different')
 # Dry run
 parser.add_argument('--dry-run', action='store_true', help='Print what would be done without actually doing it')
 # Optionally, specify a single file or a single directory to create hard links for
@@ -105,6 +105,17 @@ def merge_files(dest, src):
     os.remove(common_ancestor_tmp)
     return True
 
+# Define a function to replace a file with a hard link to another file. The function should remove the destination file and create a hard link to the source file in its place. The function should return True if the hard link is created successfully, and False otherwise. If the destination file does not exist, the function should create a hard link to the source file.
+def replace_with_hard_link(dest, src):
+    if os.path.exists(dest):
+        if not args.dry_run:
+            os.remove(dest)
+        print(f"Removed {dest}.")
+    if not args.dry_run:
+        os.link(src, dest)
+    print(f"Created hard link at {dest} to {src}.")
+    return True
+
 # Define a function to find a file or directory passed to argument args.files or args.directories and return the key in links.json. The function should search for the file in the directories in links.json if it is not found in the files of links.json. Note that the file name could be either the key or the value in the files dictionary. The function should return either the source or destination file name or directory name, the opposite of what was passed to it, or None if the file or directory is not found in links.json or its directories.
 def opposite_file_or_directory(file_or_directory):
     # If the file or directory starts with '..', it is not from the meta directory, so it should return a file or directory from the meta directory (if it exists in the files or directories of links.json)
@@ -180,11 +191,6 @@ if len(args.files) > 0:  # Process files only
                 else:
                     print(f"Destination file {dest} is different from source file {src}.")
                     print("".join(diff))
-                    if args.overwrite:
-                        print("Overwriting file with merged hard link.")
-                    else:
-                        print(f"Use --overwrite to overwrite {dest} with merged hard link.")
-                        continue  # Skip this file
             else:
                 print(f"File {dest} does not exist. Creating hard link.")
             # Make directories if necessary
@@ -195,9 +201,12 @@ if len(args.files) > 0:  # Process files only
                     print(f"Would create directory {pathlib.Path(dest).parent}")
             # Create the hard link
             if not args.dry_run:
-                merge_files(dest=src, src=dest)  # Merge the files into src
-                os.remove(dest)  # Remove the destination file
-                os.link(src, dest)  # Create the hard link
+                if args.merge:
+                    merge_files(dest=src, src=dest)  # Merge the files into src
+                    os.remove(dest)  # Remove the destination file
+                    os.link(src, dest)  # Create the hard link
+                else:
+                    replace_with_hard_link(dest=dest, src=src)
             else:
                 print(f"Would create hard link at {dest} to {src}")
         else:
@@ -242,11 +251,6 @@ if len(args.directories) > 0:  # Process directories only
                         else:
                             print(f"Destination file {dest_file} is different from source file {src_file}.")
                             print("".join(diff))
-                            if args.overwrite:
-                                print("Overwriting file with merged hard link.")
-                            else:
-                                print(f"Use --overwrite to overwrite {dest_file} with merged hard link.")
-                                continue
                     else:
                         print(f"File {dest_file} does not exist. Creating hard link.")
                     # Make directories if necessary
@@ -257,9 +261,12 @@ if len(args.directories) > 0:  # Process directories only
                             print(f"Would create directory {pathlib.Path(dest_file).parent}")
                     # Create the hard link
                     if not args.dry_run:
-                        merge_files(dest=src_file, src=dest_file)  # Merge the files into src
-                        os.remove(dest_file)  # Remove the destination file
-                        os.link(src_file, dest_file)  # Create the hard link
+                        if args.merge:
+                            merge_files(dest=src, src=dest)  # Merge the files into src
+                            os.remove(dest)  # Remove the destination file
+                            os.link(src, dest)  # Create the hard link
+                        else:
+                            replace_with_hard_link(dest=dest, src=src)
                     else:
                         print(f"Would create hard link at {dest_file} to {src_file}")
         else:
@@ -281,11 +288,6 @@ for dest, src in files.items():
         else:
             print(f"Destination file {dest} is different from source file {src}.")
             print("".join(diff))
-            if args.overwrite:
-                print("Overwriting file with merged hard link.")
-            else:
-                print(f"Use --overwrite to overwrite {dest} with merged hard link.")
-                continue  # Skip this file
     else:
         print(f"File {dest} does not exist. Creating hard link.")
     # Make directories if necessary
@@ -296,9 +298,12 @@ for dest, src in files.items():
             print(f"Would create directory {pathlib.Path(dest).parent}")
     # Create the hard link
     if not args.dry_run:
-        merge_files(dest=src, src=dest)  # Merge the files into src
-        os.remove(dest)  # Remove the destination file
-        os.link(src, dest)  # Create the hard link
+        if args.merge:
+            merge_files(dest=src, src=dest)  # Merge the files into src
+            os.remove(dest)  # Remove the destination file
+            os.link(src, dest)  # Create the hard link
+        else:
+            replace_with_hard_link(dest=dest, src=src)
     else:
         print(f"Would create hard link at {dest} to {src}")
 
@@ -337,11 +342,6 @@ for dest_dir, src_dir in directories.items():
                     else:
                         print(f"Destination file {dest} is different from source file {src}.")
                         print("".join(diff))
-                        if args.overwrite:
-                            print("Overwriting file with merged hard link.")
-                        else:
-                            print(f"Use --overwrite to overwrite {dest} with merged hard link.")
-                            continue
                 else:
                     print(f"File {dest} does not exist. Creating hard link.")
                 # Make directories if necessary
@@ -352,9 +352,12 @@ for dest_dir, src_dir in directories.items():
                         print(f"Would create directory {pathlib.Path(dest).parent}")
                 # Create the hard link
                 if not args.dry_run:
-                    merge_files(dest=src, src=dest)  # Merge the files into src
-                    if os.path.exists(dest):
-                        os.remove(dest)  # Remove the destination file
-                    os.link(src, dest)  # Create the hard link
+                    if args.merge:
+                        merge_files(dest=src, src=dest)  # Merge the files into src
+                        if os.path.exists(dest):
+                            os.remove(dest)  # Remove the destination file
+                        os.link(src, dest)  # Create the hard link
+                    else:
+                        replace_with_hard_link(dest=dest, src=src)
                 else:
                     print(f"Would create hard link at {dest} to {src}")
