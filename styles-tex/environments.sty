@@ -888,6 +888,15 @@
 	}%
 }%
 
+% Cloze notes
+
+\usepackage[margin=2em,linecolor=accent1,textcolor=accent0,thickness=.5pt]{cloze}
+\ifdefined\ispartial
+  \clozeset{hide}
+\else
+  \clozeset{show}
+\fi
+
 % Theorems
 
 % for dotted frame lines
