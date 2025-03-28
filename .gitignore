@@ -3,6 +3,7 @@
 *.bak
 book-*-cleaned.json
 *.aux
+!aux-files/*
 *.glo
 *.idx
 *.log
