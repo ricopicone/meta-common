@@ -265,7 +265,7 @@ end
 
 local function subsection_titler(el,h)
   local start_text
-  if book[h]['v-ts'] == book['text-ts'] then
+  if book[h]['v'] == book['text-ts'] then
     start_text = "from"
   else
     start_text = "a version of section " .. 
@@ -335,6 +335,7 @@ end
 local function versioned(el)
   local ts = el.classes:includes('ts')
   local ds = el.classes:includes('ds')
+  local v = el.classes:includes('v')
   -- print('el has ts classes: '..dump(ts))
   -- print('el has ds classes: '..dump(ds))
   if ts and not ds then
@@ -343,9 +344,28 @@ local function versioned(el)
     return 'ds'
   elseif ts and ds then
     return 'both'
+  elseif v then
+    return true
   else
     return false
   end
+end
+
+local function versions(el)
+  local versions = {}
+  local j = 1
+  -- print('classes : '..dump(el.classes))
+  for i,c in ipairs(el.classes) do
+    if starts_with("v",c) then
+      -- if the next character is a number, then it's a version
+      local c = string.sub(c,2)
+      if tonumber(c) then
+        versions[j] = c
+        j = j + 1
+      end
+    end
+  end
+  return versions
 end
 
 local function versions_ts(el)
@@ -410,12 +430,16 @@ local function apocryphaer(el)
   -- each hash in apocrypha can have a subhash TXTY...DXDY..., a pseudo-book-edition
   local vs_ts = versions_ts(el)
   local vs_ds = versions_ds(el)
+  local vs = versions(el)
   local ver = versioned(el)
   local subhash = ''
   for i,v in ipairs(vs_ts) do
     subhash = subhash..v
   end
   for i,v in ipairs(vs_ds) do
+    subhash = subhash..v
+  end
+  for i,v in ipairs(vs) do
     subhash = subhash..v
   end
   if subhash=='' then subhash = 'unversioned' end
@@ -432,8 +456,8 @@ local function apocryphaer(el)
   apocrypha[h][subhash]['title'] = pandoc.utils.stringify(el.content)
   apocrypha[h][subhash]['id'] = pandoc.utils.stringify(el.identifier)
   apocrypha[h][subhash]['v-specific'] = ver
-  apocrypha[h][subhash]['v-ts'] = vs_ts[1] -- this misses multiple versions
-  apocrypha[h][subhash]['v-ds'] = vs_ds[1] -- this misses multiple versions
+  apocrypha[h][subhash]['v'] = vs_ts[1] -- this misses multiple versions
+  apocrypha[h][subhash]['v'] = vs_ds[1] -- this misses multiple versions
   if el.level == 1 then
     if el.classes:includes('lab') then
       apocrypha[h][subhash]['type'] = 'lab'
@@ -487,6 +511,7 @@ local function headerer_html(el)
       local ver = versioned(el)
       local vs_ts = versions_ts(el)
       local vs_ds = versions_ds(el)
+      local vs = versions(el)
       for i,b in pairs(book_aps) do
         local vspecific = b['v-specific']
         -- print('vspecific: '..vspecific)
@@ -495,10 +520,11 @@ local function headerer_html(el)
           -- print('add to apocrypha!')
           apocryphaer(el)
         else
-          local bts = b['v-ts']
-          local bds = b['v-ds']
+          local bts = b['ts']
+          local bds = b['ds']
+          local bv = b['v']
           -- print('vs_ts: '..dump(vs_ts),'vs_ds: '..dump(vs_ds),'bts: '..bts,'bds: '..bds)
-          if not has_value(vs_ts,bts) and not has_value(vs_ds,bds) then
+          if not has_value(vs_ts,bts) and not has_value(vs_ds,bds) and not has_value(vs,bts) then
             -- print('add to apocrypha!')
             apocryphaer(el)
           else
@@ -547,6 +573,11 @@ local function headerer_html(el)
     r[#r+1] = pandoc.Div({
       pandoc.Div({pandoc.RawInline('html','TX')},{class='ts-tag'}),
       pandoc.Div({pandoc.RawInline('html','DX')},{class='ds-tag'})
+    },{class='vtag-container'})
+    -- return r
+  elseif v == true then
+    r[#r+1] = pandoc.Div({
+      pandoc.Div({pandoc.RawInline('html','v')},{class='v-tag'})
     },{class='vtag-container'})
     -- return r
   else
@@ -650,6 +681,7 @@ local function headerer_latex(el)
         end
       end
       if not v then v = '' end
+      if v then v = 'v' end
       local hash = el.attr.attributes['h']
       local hash_alt = el.attr.attributes['hash']
       if not hash then if not hash_alt then hash = '' else hash=hash_alt end end
@@ -1164,12 +1196,14 @@ local function section_diver_latex(el)
   -- local book_ap_keys = book_appearances(h)
   -- if not book_ap_keys then return {} end -- no editions contain this sub/section's hash -- this test doesn't work because it's circular reasoning!
   -- if not book_ap_keys[text_version] then return {} end -- this text edition lacks this section's hash -- this test doesn't work because it's circular reasoning!
-  local text_ts = book_def['editions'][text_version]['v-ts']
-  local text_ds = book_def['editions'][text_version]['v-ds']
+  local text_ts = book_def['editions'][text_version]['v']
+  local text_ds = book_def['editions'][text_version]['v']
+  local text_vs = book_def['editions'][text_version]['v']
   -- figure out this sub/section's versioned status in source
   local v = versioned(el)
   local vs_ts = versions_ts(el)
   local vs_ds = versions_ds(el)
+  local vs = versions(el)
   local reason = 'NO REASON'
   local exclude = false -- exclude section?
   local header_only = false -- include only header?
@@ -1195,6 +1229,12 @@ local function section_diver_latex(el)
   elseif v == 'both' then
     if has_value(vs_ts,text_ts) and has_value(vs_ds,text_ds) then
       reason = 'because it has versions '..text_ts..' and '..text_ds
+    else
+      exclude = true
+    end
+  elseif v == true then
+    if has_value(vs,text_vs) then
+      reason = 'because it has version '..text_vs
     else
       exclude = true
     end
@@ -2154,9 +2194,11 @@ local function vspaner(el)
     end
   elseif FORMAT:match 'html' then
     if el.classes:includes('ts') then
-      el.content = book_def['editions'][text_version]['v-ts']
+      el.content = book_def['editions'][text_version]['v']
     elseif el.classes:includes('ds') then
-      el.content = book_def['editions'][text_version]['v-ds']
+      el.content = book_def['editions'][text_version]['v']
+    elseif el.classes:includes('v') then
+      el.content = book_def['editions'][text_version]['v']
     end
     return el
   else
@@ -2170,14 +2212,18 @@ local function vsiconer(el)
       return pandoc.RawInline('latex', "\\tsicon{\\ts}")
     elseif el.classes:includes('dsicon') then
       return pandoc.RawInline('latex', "\\dsicon{\\ds}")
+    elseif el.classes:includes('vicon') then
+      return pandoc.RawInline('latex', "\\vicon{\\v}")
     else
       return el
     end
   elseif FORMAT:match 'html' then
     if el.classes:includes('tsicon') then
-      el.content = book_def['editions'][text_version]['v-ts']
+      el.content = book_def['editions'][text_version]['v']
     elseif el.classes:includes('dsicon') then
-      el.content = book_def['editions'][text_version]['v-ds']
+      el.content = book_def['editions'][text_version]['v']
+    elseif el.classes:includes('vicon') then
+      el.content = book_def['editions'][text_version]['v']
     end
     return el
   else
@@ -2555,7 +2601,7 @@ function Span(el)
     return indexer(el)
   elseif el.classes:includes('ts') or el.classes:includes('ds') then
     return vspaner(el)
-  elseif el.classes:includes('tsicon') or el.classes:includes('dsicon') then
+  elseif el.classes:includes('tsicon') or el.classes:includes('dsicon') or el.classes:includes('vicon') then
     return vsiconer(el)
   elseif version_params_flat[el.classes[1]] then
     return version_params_subber(el)
