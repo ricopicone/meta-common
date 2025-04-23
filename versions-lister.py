@@ -33,7 +33,7 @@ book_defs_json = Path(args.book_defs_json)
 fdir = fin.parents[0]
 f_list_base = str(fdir) + '/versions-list-'
 
-print(f_list_base)
+# print(f_list_base)
 
 # load versions-inherited-flat.json
 with open(str(fin)) as f:
@@ -119,7 +119,7 @@ def enumerater_general_md(versions_here,lines,lines_key,edition,depth=0,old_dept
                         # check if any sub-elements will make the cut and use class="empty" if so (this needs refactored)
                         else:
                             sub_elements = list(set(v) - set(['hash','emulation','name','kind','unspecific','specific','quantity','general']))
-                            print(f'\n{sub_elements}\n')
+                            # print(f'\n{sub_elements}\n')
                             if len(sub_elements) > 0:
                                 if 'name' in v:
                                     if 'kind' in v:
@@ -183,7 +183,7 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                         lines[edition][lines_key].append(f'{indent}\\item {capfirst(k)}')
                         lines[edition][lines_key].append(f': {capfirst(v)}\n')
             elif type(v) is list and len(v) > 0:
-                print(f'k: {k}')
+                # print(f'k: {k}')
                 if k == 'variables':
                     if len(ts_version) > 0:
                         summary = f'Variables (different for each specific {ts_version} system—see \\cref{{ef}})'
@@ -232,9 +232,10 @@ def enumerater_general_tex(versions_here,lines,lines_key,edition,depth=0,old_dep
                         # check if any sub-elements will make the cut and use class="empty" if so (this needs refactored)
                         else:
                             sub_elements = list(set(v) - set(['hash','emulation','name','kind','unspecific','specific','quantity','general']))
-                            print(f'\n{sub_elements}\n')
+                            # print(f'\n{sub_elements}\n')
                             if len(sub_elements) > 0:
                                 if 'name' in v:
+                                    print(f'- name: {v["name"]}')
                                     if 'kind' in v:
                                         if 'description' in v:
                                             lines[edition][lines_key].append(f'\n{indent}\\item {capfirst(v["kind"])}: {capfirst(v["name"])}{em}. {label} {v["description"]}')
@@ -342,15 +343,15 @@ We define the general {k1} target system as follows.''')
 iv = 0;
 for edition,vedition in lines.items():
     for kv,v in vedition.items():
-        print(f'edition: {edition}')
-        print(f'kv: {kv}')
+        # print(f'edition: {edition}')
+        # print(f'kv: {kv}')
         print(f'writing file {f_list_base}{edition}-TS-general.md')
         if iv == 0:
             write_mode = 'w'
         else:
             write_mode = 'a'
         iv = iv + 1
-        print(f'write_mode: {write_mode}')
+        # print(f'write_mode: {write_mode}')
         with open(f'{f_list_base}{edition}-TS-general.md', write_mode) as f:
             for item in v:
                 f.write("%s" % item)
@@ -411,10 +412,10 @@ for edition,vedition in bookdefs['editions'].items():
 for edition,vedition in lines.items():
     for kv,v in vedition.items():
         print(f'edition: {edition}')
-        print(f'kv: {kv}')
+        # print(f'kv: {kv}')
         print(f'writing file {f_list_base}{edition}-{kv}-general.tex')
         write_mode = 'w'
-        print(f'write_mode: {write_mode}')
+        # print(f'write_mode: {write_mode}')
         with open(f'{f_list_base}{edition}-{kv}-general.tex', write_mode) as f:
             for item in v:
                 f.write("%s" % item)
@@ -454,7 +455,7 @@ All hardware is specified, including some suppliers we like.{supsup}''')
         if s == 'target-computer':
             sname = 'Target computer'
         elif s == 'ui':
-            sname = 'user interface (UI) subsystem'
+            sname = 'User interface (UI) subsystem'
         elif s == 'electromechanical-subsystem':
             sname = 'Electromechanical subsystem'
         elif s == 'prototyping':
@@ -560,14 +561,14 @@ iv = 0;
 for edition,vedition in lines.items():
     for kv,v in vedition.items():
         print(f'edition: {edition}')
-        print(f'kv: {kv}')
+        # print(f'kv: {kv}')
         print(f'writing file {f_list_base}{edition}-TS-specific.md')
         if iv == 0:
             write_mode = 'w'
         else:
             write_mode = 'a'
         iv = iv + 1
-        print(f'write_mode: {write_mode}')
+        # print(f'write_mode: {write_mode}')
         with open(f'{f_list_base}{edition}-TS-specific.md', write_mode) as f:
             for item in v:
                 f.write("%s" % item)
@@ -664,7 +665,7 @@ for edition,vedition in lines.items():
         print(f'kv: {kv}')
         print(f'writing file {f_list_base}{edition}-{kv}-general.tex')
         write_mode = 'w'
-        print(f'write_mode: {write_mode}')
+        # print(f'write_mode: {write_mode}')
         with open(f'{f_list_base}{edition}-{kv}-general.tex', write_mode) as f:
             for item in v:
                 f.write("%s" % item)
@@ -702,7 +703,7 @@ All software is specified.''')
     for sk,sv in versions[ds].items():
         if isinstance(sv,str):
             if sk != 'description':
-                print(f'\n\nsv: {sv}\n\n')
+                # print(f'\n\nsv: {sv}\n\n')
                 # this should only happen for IDE
                 if "specific" in versions[ds]:
                     raise(Exception(f'Not implemented, write the code for top-level specifics!'))
@@ -711,8 +712,8 @@ All software is specified.''')
                     # print its details
                     lines[edition][k].append(f'\n<details class="empty"><summary>IDE: {versions[ds]["ide"]} </summary></details>')
         elif sk not in ['children','parent','ide']:
-            print(f'versions[ds][sk]: {versions[ds][sk]}')
-            print(f'sk: {sk}')
+            # print(f'versions[ds][sk]: {versions[ds][sk]}')
+            # print(f'sk: {sk}')
             if "specific" in versions[ds][sk]:
                 spec = "specific"
             elif "unspecific" in versions[ds][sk]:
@@ -782,7 +783,7 @@ for edition,vedition in lines.items():
         else:
             write_mode = 'a'
         iv = iv + 1
-        print(f'write_mode: {write_mode}')
+        # print(f'write_mode: {write_mode}')
         with open(f'{f_list_base}{edition}-DS-specific.md', write_mode) as f:
             for item in v:
                 f.write("%s" % item)

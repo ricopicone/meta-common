@@ -59,6 +59,15 @@ local function read_value_from_file(file)
   return value
 end
 
+--------- Define a function to split a string into a table of strings based on a delimiter
+local function split(s, delimiter)
+  local result = {}
+  for match in (s..delimiter):gmatch("(.-)"..delimiter) do
+    table.insert(result, match)
+  end
+  return result
+end
+
 ---- read book-def.json
 filter_dir = get_parent(script_path())
 local open = io.open
@@ -201,22 +210,22 @@ local interior_filter = {
     return Link(el)
   end,
   Code = function(el)
-    if FORMAT:match 'latex' then
+    if FORMAT:match 'latex' or FORMAT:match 'beamer' then
       return coder_latex(el)
     else
       return Code(el)
     end
   end,
   CodeBlock = function(el)
-    if FORMAT:match 'latex' then
+    if FORMAT:match 'latex' or FORMAT:match 'beamer' then
       return coder_latex(el)
     else
       return CodeBlock(el)
     end
   end,
   Cite = function(el)
-    if FORMAT:match 'latex' then
-      local first_id = el.citations[1].id
+    local first_id = el.citations[1].id
+    if FORMAT:match 'latex' or FORMAT:match 'beamer' then
       if starts_with('sec:',first_id) or starts_with('Sec:',first_id) or starts_with('eq:',first_id) or starts_with('Eq:',first_id) or starts_with('tbl:',first_id) or starts_with('Tbl:',first_id) or starts_with('fig:',first_id) or starts_with('Fig:',first_id) or starts_with('lst:',first_id) or starts_with('Lst:',first_id) then
         return pandoccrossrefer(el)
       else
@@ -256,7 +265,7 @@ end
 
 local function subsection_titler(el,h)
   local start_text
-  if book[h]['v-ts'] == book['text-ts'] then
+  if book[h]['v'] == book['text-ts'] then
     start_text = "from"
   else
     start_text = "a version of section " .. 
@@ -326,6 +335,7 @@ end
 local function versioned(el)
   local ts = el.classes:includes('ts')
   local ds = el.classes:includes('ds')
+  local v = el.classes:includes('v')
   -- print('el has ts classes: '..dump(ts))
   -- print('el has ds classes: '..dump(ds))
   if ts and not ds then
@@ -334,9 +344,28 @@ local function versioned(el)
     return 'ds'
   elseif ts and ds then
     return 'both'
+  elseif v then
+    return true
   else
     return false
   end
+end
+
+local function versions(el)
+  local versions = {}
+  local j = 1
+  -- print('classes : '..dump(el.classes))
+  for i,c in ipairs(el.classes) do
+    if starts_with("v",c) then
+      -- if the next character is a number, then it's a version
+      local c = string.sub(c,2)
+      if tonumber(c) then
+        versions[j] = c
+        j = j + 1
+      end
+    end
+  end
+  return versions
 end
 
 local function versions_ts(el)
@@ -401,12 +430,16 @@ local function apocryphaer(el)
   -- each hash in apocrypha can have a subhash TXTY...DXDY..., a pseudo-book-edition
   local vs_ts = versions_ts(el)
   local vs_ds = versions_ds(el)
+  local vs = versions(el)
   local ver = versioned(el)
   local subhash = ''
   for i,v in ipairs(vs_ts) do
     subhash = subhash..v
   end
   for i,v in ipairs(vs_ds) do
+    subhash = subhash..v
+  end
+  for i,v in ipairs(vs) do
     subhash = subhash..v
   end
   if subhash=='' then subhash = 'unversioned' end
@@ -423,8 +456,8 @@ local function apocryphaer(el)
   apocrypha[h][subhash]['title'] = pandoc.utils.stringify(el.content)
   apocrypha[h][subhash]['id'] = pandoc.utils.stringify(el.identifier)
   apocrypha[h][subhash]['v-specific'] = ver
-  apocrypha[h][subhash]['v-ts'] = vs_ts[1] -- this misses multiple versions
-  apocrypha[h][subhash]['v-ds'] = vs_ds[1] -- this misses multiple versions
+  apocrypha[h][subhash]['v'] = vs_ts[1] -- this misses multiple versions
+  apocrypha[h][subhash]['v'] = vs_ds[1] -- this misses multiple versions
   if el.level == 1 then
     if el.classes:includes('lab') then
       apocrypha[h][subhash]['type'] = 'lab'
@@ -478,6 +511,7 @@ local function headerer_html(el)
       local ver = versioned(el)
       local vs_ts = versions_ts(el)
       local vs_ds = versions_ds(el)
+      local vs = versions(el)
       for i,b in pairs(book_aps) do
         local vspecific = b['v-specific']
         -- print('vspecific: '..vspecific)
@@ -486,10 +520,11 @@ local function headerer_html(el)
           -- print('add to apocrypha!')
           apocryphaer(el)
         else
-          local bts = b['v-ts']
-          local bds = b['v-ds']
+          local bts = b['ts']
+          local bds = b['ds']
+          local bv = b['v']
           -- print('vs_ts: '..dump(vs_ts),'vs_ds: '..dump(vs_ds),'bts: '..bts,'bds: '..bds)
-          if not has_value(vs_ts,bts) and not has_value(vs_ds,bds) then
+          if not has_value(vs_ts,bts) and not has_value(vs_ds,bds) and not has_value(vs,bts) then
             -- print('add to apocrypha!')
             apocryphaer(el)
           else
@@ -538,6 +573,11 @@ local function headerer_html(el)
     r[#r+1] = pandoc.Div({
       pandoc.Div({pandoc.RawInline('html','TX')},{class='ts-tag'}),
       pandoc.Div({pandoc.RawInline('html','DX')},{class='ds-tag'})
+    },{class='vtag-container'})
+    -- return r
+  elseif v == true then
+    r[#r+1] = pandoc.Div({
+      pandoc.Div({pandoc.RawInline('html','v')},{class='v-tag'})
     },{class='vtag-container'})
     -- return r
   else
@@ -641,6 +681,7 @@ local function headerer_latex(el)
         end
       end
       if not v then v = '' end
+      if v then v = 'v' end
       local hash = el.attr.attributes['h']
       local hash_alt = el.attr.attributes['hash']
       if not hash then if not hash_alt then hash = '' else hash=hash_alt end end
@@ -689,8 +730,32 @@ local function headerer_latex(el)
   end
 end
 
+local function key_text_html(el)
+  local text
+  if el.classes:includes('folder') then
+    text = '<span class="material-icons">folder</span>'
+  elseif el.classes:includes('windows') then
+    text = '<span class="key"><i class="fa-brands fa-windows"></i></span>'
+  elseif el.classes:includes('enter') then
+    text = '<span class="key">ENTR</span>'
+  elseif el.classes:includes('return') then
+    text = '<span class="key"><span class="material-icons">keyboard_return</span></span>'
+  elseif el.classes:includes('leftarrow') or  el.classes:includes('left') or el.classes:includes('backspace') then
+    text = '<span class="key"><span class="material-icons">keyboard_backspace</span></span>'
+  elseif el.classes:includes('uparrow') or el.classes:includes('up') then
+    text = '<span class="key">UP</span>'
+  elseif el.classes:includes('downarrow') or el.classes:includes('down') then
+    text = '<span class="key">DWN</span>'
+  elseif el.classes:includes('play') then
+    text = '<span class="key"><span class="material-icons">play_arrow</span></span>'
+  else
+    text = "<span class='key'>"..pandoc.utils.stringify(el.content).."</span>"
+  end
+  return text
+end
+
 local function keyer(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local text
     if el.content then
       text = pandoc.walk_block(el.content,inline_filter)
@@ -719,20 +784,29 @@ local function keyer(el)
     end
     return pandoc.RawInline('latex', "\\mykeys{" .. text .. "}")
   elseif FORMAT:match 'html' then
-    if el.classes:includes('folder') then
-      return pandoc.RawInline('html',
-        '<span class="material-icons">folder</span>'
-      )
-    elseif el.classes:includes('windows') then
-      return pandoc.RawInline('html',
-        '<i class="fa-brands fa-windows"></i>'
-      )
-    elseif el.classes:includes('enter') or el.classes:includes('return') then
-      return pandoc.RawInline('html',
-        '<span class="material-icons">keyboard_return</span>'
-      )
+    -- Separate at + signs (if any are detected)
+    local keys
+    local nokeys = false
+    if isempty(el.content) then
+      keys = {}
+      nokeys = true
     else
-      return el
+      keys = pandoc.utils.stringify(el.content)
+      keys = split(keys, '+')
+    end
+    if not nokeys then
+      -- Loop through each part
+      for i, key in ipairs(keys) do
+        -- If it's the first part, don't add a plus sign
+        if i == 1 then
+          text = "<span class='key'>" .. key .. "</span>"
+        else
+          text = text .. " + " .. "<span class='key'>" .. key .. "</span>"
+        end
+      end
+      return pandoc.RawInline('html', text)
+    else
+      return pandoc.RawInline('html', key_text_html(el))
     end
   else
     return el 
@@ -742,7 +816,7 @@ end
 local function citer(el)
   local citeraw
   local citesuffix
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     citeraw = "\\autocite["
     for i, c in ipairs(el.citations) do
       citekey = c.id
@@ -798,6 +872,8 @@ local function formatted_hashref(ed,h,cap)
     hashref = 'problem ' .. book_value(ed,h,'problem-num')
   elseif type == 'labproblem' then
     hashref = 'problem ' .. book_value(ed,h,'problem-num')
+  elseif type == 'listing' then
+    hashref = 'listing ' .. book_value(ed,h,'listing-num')
   else
     hashref = ''
   end
@@ -827,7 +903,7 @@ local function multihashref(el, cap)
   local text = pandoc.utils.stringify(content)
   local hashes = split(text, ',')
   if #hashes == 1 then
-    if starts_with('fig:',hashes[1]) or starts_with('Fig:',hashes[1]) or starts_with('tbl:',hashes[1]) or starts_with('Tbl:',hashes[1]) then
+    if starts_with('fig:',hashes[1]) or starts_with('Fig:',hashes[1]) or starts_with('tbl:',hashes[1]) or starts_with('Tbl:',hashes[1]) or starts_with('lst:',hashes[1]) or starts_with('Lst:',hashes[1]) then
       return pandoc.Span(formatted_hashref("0",hashes[1],cap))
     else
       return pandoc.Link(formatted_hashref("0",hashes[1],cap),"/" .. hashes[1])
@@ -837,13 +913,13 @@ local function multihashref(el, cap)
     local j = 1
     for i, hash in ipairs(hashes) do -- comma separated list of hashes
       if i == 1 and cap then
-        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) then
+        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) or starts_with('lst:',hashes[1]) or starts_with('Lst:',hashes[1]) then
           formatted_hashes[i] = pandoc.Span(formatted_hashref("0",hash,cap))
         else
           formatted_hashes[i] = pandoc.Link(formatted_hashref("0",hash,cap),"/" .. hash)
         end
       else
-        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) then
+        if starts_with('fig:',hash) or starts_with('Fig:',hash) or starts_with('tbl:',hash) or starts_with('Tbl:',hash) or starts_with('lst:',hashes[1]) or starts_with('Lst:',hashes[1]) then
           formatted_hashes[j] = pandoc.Span(formatted_hashref("0",hash,false))
         else
           formatted_hashes[j] = pandoc.Link(formatted_hashref("0",hash,false),"/" .. hash)
@@ -868,7 +944,7 @@ local function hashrefer(el)
     print('Hashref')
     cap = true
   end
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if cap then
       return pandoc.RawInline('latex', "\\Cref{" .. text .. "}")
     else
@@ -882,7 +958,7 @@ end
 local function linerefer(el)
   local content = el.content
   local text = pandoc.utils.stringify(content)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return pandoc.RawInline('latex', "\\lref{" .. text .. "}")
   else
     return pandoc.Link(text,"/" .. text)
@@ -893,7 +969,7 @@ local function labeler(el)
   local content = el.content
   local text = pandoc.utils.stringify(content)
   local component = el.classes:includes('component')
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if component then
       return pandoc.RawInline('latex', "\\label[componentitem]{" .. text .. "}")
     else
@@ -920,7 +996,7 @@ local function plainciter(el)
   else 
     postpost = ''
   end
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return pandoc.RawInline(
       'latex', "{\\textcite[{"..pre.."}][{"..post.."}]{" .. text .. "}"..postpost.."}")
   else
@@ -930,7 +1006,7 @@ local function plainciter(el)
 end
 
 function pandoccrossrefer(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local citeid
     local citeids = ''
     for index, value in ipairs(el.citations) do
@@ -950,7 +1026,17 @@ function pandoccrossrefer(el)
     local citeids_lower = citeids:sub(1,1):lower()..citeids:sub(2)
     return pandoc.RawInline('latex', cref .. citeids_lower .. "}")
   else
-    return el
+    -- In html, we'll just return the text looked up from the book json. Use type then number
+    local text = ''
+    for index, value in ipairs(el.citations) do
+      citeid = value.id
+      if index == 1 then
+        text = formatted_hashref("0",citeid,true)
+      else
+        text = text..', '..formatted_hashref("0",citeid,true)
+      end
+    end
+    return pandoc.Span(text)
   end
 end
 
@@ -968,7 +1054,7 @@ local function infoboxer(el)
   -- end
   local title = el.attr.attributes['title']
   local identifier = el.identifier
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if title == nil then
       title = "{}"
     else
@@ -1010,7 +1096,7 @@ local function theoremer(el)
   local content = pandoc.write(content_doc,'latex')
   local title = el.attr.attributes['title']
   local identifier = el.identifier
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if title == nil then
       title = ""
     end
@@ -1060,7 +1146,7 @@ local function definitioner(el)
   local content = pandoc.write(content_doc,'latex')
   local title = el.attr.attributes['title']
   local identifier = el.identifier
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if title == nil then
       title = ""
     end
@@ -1110,12 +1196,14 @@ local function section_diver_latex(el)
   -- local book_ap_keys = book_appearances(h)
   -- if not book_ap_keys then return {} end -- no editions contain this sub/section's hash -- this test doesn't work because it's circular reasoning!
   -- if not book_ap_keys[text_version] then return {} end -- this text edition lacks this section's hash -- this test doesn't work because it's circular reasoning!
-  local text_ts = book_def['editions'][text_version]['v-ts']
-  local text_ds = book_def['editions'][text_version]['v-ds']
+  local text_ts = book_def['editions'][text_version]['v']
+  local text_ds = book_def['editions'][text_version]['v']
+  local text_vs = book_def['editions'][text_version]['v']
   -- figure out this sub/section's versioned status in source
   local v = versioned(el)
   local vs_ts = versions_ts(el)
   local vs_ds = versions_ds(el)
+  local vs = versions(el)
   local reason = 'NO REASON'
   local exclude = false -- exclude section?
   local header_only = false -- include only header?
@@ -1141,6 +1229,12 @@ local function section_diver_latex(el)
   elseif v == 'both' then
     if has_value(vs_ts,text_ts) and has_value(vs_ds,text_ds) then
       reason = 'because it has versions '..text_ts..' and '..text_ds
+    else
+      exclude = true
+    end
+  elseif v == true then
+    if has_value(vs,text_vs) then
+      reason = 'because it has version '..text_vs
     else
       exclude = true
     end
@@ -1170,7 +1264,7 @@ local function myurler_html(el)
 end
 
 local function myurler(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local url = pandoc.utils.stringify(el.target)
     local hash = el.attr.attributes['h']
     local hash_alt = el.attr.attributes['hash']
@@ -1211,7 +1305,7 @@ local function pather(el) -- handles Span and Code inputs
   else
     path = pandoc.utils.stringify(el.content)
   end
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if path==nil then
       return el
     else
@@ -1229,7 +1323,28 @@ local function menuer_html(el)
   local i = 0
   for item in string.gmatch(content, '([^,]+)') do
     i = i + 1
-    items[i] = pandoc.Span(item,{class='menu-item'})
+    local image = ''
+    if string.match(item,'eresume') then
+      image = '<img src="/assets/figures/eclipse-icons/resume_co.svg" alt="eresume" class="menu-icon">'
+    elseif string.match(item,'estepover') then
+      image = '<img src="/assets/figures/eclipse-icons/stepover_co.svg" alt="estepover" class="menu-icon">'
+    elseif string.match(item,'estepinto') then
+      image = '<img src="/assets/figures/eclipse-icons/stepinto_co.svg" alt="estepinto" class="menu-icon">'
+    elseif string.match(item,'estepreturn') then
+      image = '<img src="/assets/figures/eclipse-icons/stepreturn_co.svg" alt="estepreturn" class="menu-icon">'
+    elseif string.match(item,'eterminate') then
+      image = '<img src="/assets/figures/eclipse-icons/terminate_co.svg" alt="eterminate" class="menu-icon">'
+    elseif string.match(item,'enrc') then
+      image = '<img src="/assets/figures/eclipse-icons/new_con.svg" alt="enrc" class="menu-icon">'
+    elseif string.match(item,'mouser') then
+      image = '<img src="/assets/figures/mouse-right.svg" alt="mouser" class="menu-icon" style="width: 1em;">'
+    elseif string.match(item,'mousel') then
+      image = '<img src="/assets/figures/mouse-left.svg" alt="mousel" class="menu-icon" style="width: 1em;">'
+    else
+      image = item -- just text
+    end
+    -- items[i] = pandoc.Span(item,{class='menu-item'})
+    items[i] = pandoc.Span(pandoc.RawInline('html',image),{class='menu-item'})
   end
   items[1].classes = {'menu-item','menu-item-first'}
   items[i].classes = {'menu-item','menu-item-last'}
@@ -1257,7 +1372,7 @@ function imager(el)
   local i
   local e
   local options
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     -- width
     local width = el.attr.attributes['figwidth']
     if width==nil then
@@ -1289,7 +1404,7 @@ function figurer(el,nofloat)
   local i
   local e
   local options
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local fig_tex
     -- content, essentially Image
     local el_walked = pandoc.walk_block(el,{
@@ -1308,7 +1423,7 @@ function figurer(el,nofloat)
     if nofloat then
       fig_begin = "\\begin{figure}[H]%\n" ..
         "\\centering\n"
-      fig_end = "\\end{figure}%\n"
+      fig_end = "\\end{figure}%\n\n"
       -- nofloat_text = "nofloat"
     else
       if el.attr.attributes['position'] then
@@ -1647,6 +1762,14 @@ local function algorithmerLATEX(el)
   local file
   local ext
   path,file,ext = split_filename(stripped)
+  print(path)
+  print(file)
+  if FORMAT:match 'beamer' then
+    -- Remove the leading editable/ from the path
+    path = string.gsub(path,'editable/','')
+    -- Remove first two characters from path (hash ... this assumes two-character hashes, which have been conventional thus far)
+    path = string.sub(path,3)
+  end
   local fname = "common/"..path..file..'tex'
   -- read file as raw latex
   print('fname: '..fname)
@@ -1691,7 +1814,7 @@ local function version_params_subber(el)
 end
 
 -- local function exerciser(el)
---   if FORMAT:match 'latex' then
+--   if FORMAT:match 'latex' or FORMAT:match 'beamer' then
 --     local el_walked = pandoc.walk_block(el,{
 --       Code = function(el)
 --         return coder_latex(el)
@@ -1751,7 +1874,7 @@ function coder_latex(el)
 end
 
 function interior_ordered_lister(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     -- Walk with interior_filter
     el = pandoc.walk_block(el,interior_filter)
     return el -- going to make alpha in environments.sty
@@ -1786,7 +1909,7 @@ local function exercise_solution(el)
 end
 
 local function exerciser(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local el_walked = pandoc.walk_block(el,{
       Div = function(el)
         if el.classes:includes('exercise-solution') or el.classes:includes('solution') then
@@ -1838,7 +1961,7 @@ local function listinger(el)
   local id = pandoc.utils.stringify(el.identifier)
   local caption = el.attr.attributes['caption']
   local language = code_block.classes[1]
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.attr.attributes['caption'] then
       local caption_pre = pandoc.read(caption,'markdown').blocks[1]
       local caption_walked = pandoc.walk_block(caption_pre,interior_filter)
@@ -1909,18 +2032,23 @@ local function listinger(el)
     end
     return list_tex
   elseif FORMAT:match 'html' then
-    -- table.insert(code_block.attr.,{caption=caption})
-    return pandoc.CodeBlock(
-      code_block.text,
-      {identifier=id,classes=language,caption=caption}
-    )
+    -- Look up listing number from book json
+    if el.classes:includes('solutions-only') then
+      return {}  -- don't include solutions in html (website)
+    end
+    local listing_number = book_value("0",id,"listing-num")
+    return pandoc.Div({
+      pandoc.CodeBlock(
+        code_block.text,
+        {identifier=id,class=language}
+      )},{class='listing', number=listing_number, caption=caption})
   else
     return el
   end
 end
 
 local function bgreadinglister(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local content = el.content
     content = pandoc.utils.stringify(content)
     return pandoc.RawInline('latex',
@@ -1934,7 +2062,7 @@ local function bgreadinglister(el)
 end
 
 local function freadinglister(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     el_walked = pandoc.walk_block(el,interior_filter)
     local content_doc = pandoc.Pandoc(el_walked.content)
     local content = pandoc.write(content_doc,'latex')
@@ -1993,7 +2121,7 @@ local function example_solution_html(el)
 end
 
 local function exampler(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local identifier = el.identifier
     local el_walked = pandoc.walk_block(el,{
       Div = function(el)
@@ -2028,6 +2156,7 @@ local function exampler(el)
     if not v then v = '' end
     -- Get the example number from the book json
     local example_number = book_value(text_version,hash,"example-num")
+    if example_number == nil then example_number = "" end
     new = pandoc.Div(
       pandoc.RawBlock('html',
         "<div class='example-title'>\n"..
@@ -2046,7 +2175,7 @@ local function exampler(el)
 end
 
 local function keyworder(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local content = pandoc.utils.stringify(el.content)
     return pandoc.RawInline('latex', "\\keyword{" .. content .. "}")
   else
@@ -2055,7 +2184,7 @@ local function keyworder(el)
 end
 
 local function vspaner(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.classes:includes('ts') then
       return pandoc.RawInline('latex', "\\ts{}")
     elseif el.classes:includes('ds') then
@@ -2065,9 +2194,11 @@ local function vspaner(el)
     end
   elseif FORMAT:match 'html' then
     if el.classes:includes('ts') then
-      el.content = book_def['editions'][text_version]['v-ts']
+      el.content = book_def['editions'][text_version]['v']
     elseif el.classes:includes('ds') then
-      el.content = book_def['editions'][text_version]['v-ds']
+      el.content = book_def['editions'][text_version]['v']
+    elseif el.classes:includes('v') then
+      el.content = book_def['editions'][text_version]['v']
     end
     return el
   else
@@ -2076,19 +2207,23 @@ local function vspaner(el)
 end
 
 local function vsiconer(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.classes:includes('tsicon') then
       return pandoc.RawInline('latex', "\\tsicon{\\ts}")
     elseif el.classes:includes('dsicon') then
       return pandoc.RawInline('latex', "\\dsicon{\\ds}")
+    elseif el.classes:includes('vicon') then
+      return pandoc.RawInline('latex', "\\vicon{\\v}")
     else
       return el
     end
   elseif FORMAT:match 'html' then
     if el.classes:includes('tsicon') then
-      el.content = book_def['editions'][text_version]['v-ts']
+      el.content = book_def['editions'][text_version]['v']
     elseif el.classes:includes('dsicon') then
-      el.content = book_def['editions'][text_version]['v-ds']
+      el.content = book_def['editions'][text_version]['v']
+    elseif el.classes:includes('vicon') then
+      el.content = book_def['editions'][text_version]['v']
     end
     return el
   else
@@ -2097,7 +2232,7 @@ local function vsiconer(el)
 end
 
 function mathspaner(el) -- for interior math
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     -- print(dump(el))
     if el.content[1].mathtype == 'InlineMath' then
       return pandoc.RawInline('tex', '$' .. el.text .. '$')
@@ -2119,7 +2254,7 @@ function mathspaner(el) -- for interior math
 end
 
 local function indexer(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local ss = '[]'
     local fun = '[]'
     local primary = ''
@@ -2244,7 +2379,7 @@ local function indexer(el)
   elseif FORMAT:match 'html' then
     return pandoc.RawInline('html',"") -- not using the index online
   end
-  return el
+  return ""
 end
 
 local function code_shorthand(el)
@@ -2255,7 +2390,7 @@ local function code_shorthand(el)
 end
 
 local function unicoder(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     local content = el.content
     local text = pandoc.utils.stringify(content)
     return pandoc.RawInline('latex',"\\unicoder{"..text.."}")
@@ -2265,7 +2400,7 @@ local function unicoder(el)
 end
 
 local function outputer(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.classes:includes('output') and el.classes:includes('execute_result') then
       local el_walked = pandoc.walk_block(el,interior_filter)
       el_walked = pandoc.walk_block(el_walked,interior_filter)
@@ -2283,6 +2418,14 @@ local function outputer(el)
   end
 end
 
+local function only_htmler(el)
+  if FORMAT:match 'html' then
+    return el
+  else
+    return pandoc.RawBlock(FORMAT,"")
+  end
+end
+
 ------------
 
 function Code(el)
@@ -2293,7 +2436,7 @@ function Code(el)
   if FORMAT:match 'html' then
     el.classes[#el.classes+1] = 'sourceCode'
     return el
-  elseif FORMAT:match 'latex' then
+  elseif FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return coder_latex(el)
   else
     -- print('\nELSE\n')
@@ -2311,7 +2454,7 @@ function CodeBlock(el)
   if FORMAT:match 'html' then
     el.classes[#el.classes+1] = 'sourceCode'
     return el
-  elseif FORMAT:match 'latex' then
+  elseif FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return coder_latex(el)
   else
     return el
@@ -2337,7 +2480,7 @@ function Link(el)
 end
 
 function RawBlock(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.format:match 'html' then -- process html tables (and other html)
       local html_read = pandoc.read(el.text, 'html+tex_math_dollars').blocks
       -- walk each block
@@ -2421,6 +2564,8 @@ function Div(el)
       return theoremer(el)
     elseif el.classes:includes('definition') then
       return definitioner(el)
+    elseif el.classes:includes('only-html') then
+      return only_htmler(el)
     else
       return el
     end
@@ -2433,7 +2578,7 @@ function Span(el)
   elseif el.classes:includes('menu') then
     if FORMAT:match 'html' then
       return menuer_html(el)
-    elseif FORMAT:match 'latex' then
+    elseif FORMAT:match 'latex' or FORMAT:match 'beamer' then
       return menuer_latex(el)
     else
       return el
@@ -2456,7 +2601,7 @@ function Span(el)
     return indexer(el)
   elseif el.classes:includes('ts') or el.classes:includes('ds') then
     return vspaner(el)
-  elseif el.classes:includes('tsicon') or el.classes:includes('dsicon') then
+  elseif el.classes:includes('tsicon') or el.classes:includes('dsicon') or el.classes:includes('vicon') then
     return vsiconer(el)
   elseif version_params_flat[el.classes[1]] then
     return version_params_subber(el)
@@ -2480,6 +2625,8 @@ end
 function Header(el)
   if FORMAT:match 'latex' then
     return headerer_latex(el)
+  elseif FORMAT:match 'beamer' then
+    return el
   elseif FORMAT:match 'html' then
     -- if el.classes:includes('v') then
     --   el.classes:insert('hide')
@@ -2492,7 +2639,7 @@ end
 
 function Math(el)
   -- print('\nmath\n')
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     if el.mathtype == 'InlineMath' then
       return pandoc.RawInline('tex', '$' .. el.text .. '$')
     else
@@ -2503,9 +2650,9 @@ function Math(el)
   end
 end
 
-function Figure(el) 
+function Figure(el)
   if el.content[1].content[1].classes:includes('algorithm') then
-    if FORMAT:match 'latex' then
+    if FORMAT:match 'latex' or FORMAT:match 'beamer' then
       return algorithmerLATEX(el)
     elseif FORMAT:match 'html' then
       return algorithmerHTML(el)
@@ -2521,15 +2668,77 @@ function Figure(el)
   end
 end
 
+function get_table_id(el)
+  -- Get the identifier from the caption (don't know why it's not in the identifier field)
+  -- Convert to SimpleTable if necessary
+  if el.t == 'Table' then
+    el = pandoc.utils.to_simple_table(el)
+  end
+  local caption = pandoc.utils.stringify(el.caption)
+  local id = string.match(caption, "%{.*%}$")
+  -- Remove the leading {# and trailing } from the id
+  if id == nil then id = '' end
+  id = string.sub(id, 3, -2)
+  return id
+end
+
+function get_table_caption(el)
+  -- Get the caption by converting to a SimpleTable
+  -- Convert to SimpleTable if necessary
+  if el.t == 'Table' then
+    el = pandoc.utils.to_simple_table(el)
+  end
+  -- local caption = pandoc.utils.stringify(el.caption)
+  -- Instead of stringifying caption, filter it with inline_filter
+  local caption = el.caption
+  -- Convert the caption to a Pandoc document
+  caption = pandoc.walk_block(caption, interior_filter)
+  caption_doc = pandoc.Pandoc(caption)
+  if FORMAT:match 'html' then
+    caption = pandoc.write(caption_doc, 'html')
+    -- Remove the identifier from the caption, which is in the form {#identifier} at the end
+    id = get_table_id(el)
+    caption = string.gsub(caption, "%s*{#.*}$", "")
+    caption = {pandoc.RawBlock('html', caption)}
+  else
+    caption = pandoc.write(caption_doc, 'latex')
+    caption = string.gsub(caption, "%s*{#.*}$", "")
+    caption = {pandoc.RawBlock('latex', caption)}
+  end
+  return caption
+end
+
 function tabler_html(el)
+  -- Add data attributes for table number and caption from the book json
+  local id = get_table_id(el)
+  -- local caption = get_table_caption(el)
+  -- Get the number from the book json
+  local number = book_value("0",id,"number")
+  if number == nil then number = "" end
+  -- Convert to SimpleTable
+  el = pandoc.utils.to_simple_table(el)
+  -- Update the caption to include the number
+  local old_caption = el.caption
+  -- Walk the caption with inline_filter
+  local new_caption = pandoc.walk_block(old_caption, interior_filter)
+  -- Convert the caption to a Pandoc document
+  new_caption = pandoc.Pandoc(new_caption)
+  -- Convert the caption to HTML
+  new_caption = pandoc.write(new_caption, 'html+raw_tex')
+  new_caption = string.gsub(new_caption, "%s*{#.*}$", "")
+  new_caption = pandoc.RawInline('html', new_caption)
+  -- Add the number to the caption
+  local new_caption = {pandoc.Str("Table "), pandoc.Str(number), pandoc.Str(": "), new_caption}
+  el.caption = new_caption
+  -- Convert the table back to a Table element
+  el = pandoc.utils.from_simple_table(el)
+  -- Add the number as data attribute
+  el.attr.attributes["number"] = number
   return el
 end
 
 function tabler_latex(el)
-  print(el)
-  local identifier = el.identifier
-  if identifier == nil then identifier = '' end
-
+  local identifier = get_table_id(el)
   el = pandoc.utils.to_simple_table(el)
 
   local function render_row(row)
@@ -2542,22 +2751,34 @@ function tabler_latex(el)
     return table.concat(cells, " & ").." \\\\"
   end
 
-  local function render_tabular(rows)
+  local function render_header(row)
+    local cells = {}
+    for _, cell in ipairs(row) do
+      doc = pandoc.Pandoc(cell)
+      local cell_text = pandoc.write(doc, 'latex+raw_tex')
+      cells[#cells + 1] = cell_text
+    end
+    return table.concat(cells, " & ").." \\\\"
+  end
+
+  local function render_tabular(header, rows)
     if rows == nil then return '' end
     local lines = {}
+    lines[1] = "\\toprule"
+    lines[2] = render_header(header)
+    lines[3] = "\\midrule"
     for i, row in ipairs(rows) do
       lines[#lines + 1] = render_row(row)
-      if i < #rows then
-        lines[#lines + 1] = "\\hline"
-      end
     end
+    lines[#lines + 1] = "\\bottomrule"
     return "\\begin{tabular}{"..string.rep("l", #rows[1]).."}\n"..table.concat(lines, "\n").."\n\\end{tabular}"
   end
 
   local function render_table(tbl)
-    local caption = tbl.caption
-    local identifier = tbl.identifier
-    if identifier == nil then identifier = '' end
+    local caption = get_table_caption(tbl)
+    local identifier = get_table_id(tbl)
+    print('table identifier: '..identifier)
+    print(dump(tbl))
     local caption_text
     if caption then
       caption_text = pandoc.utils.stringify(caption)
@@ -2572,8 +2793,9 @@ function tabler_latex(el)
     else
       caption_latex = ''
     end
+    local header = tbl.headers
     local rows = tbl.rows
-    local content_latex = render_tabular(rows)
+    local content_latex = render_tabular(header, rows)
     return "\\begin{table}\n"..caption_latex.."\n"..content_latex.."\n\\end{table}"
   end
 
@@ -2586,7 +2808,7 @@ function tabler_latex(el)
 end
 
 function Table(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return tabler_latex(el)
   elseif FORMAT:match 'html' then
     return tabler_html(el)
@@ -2596,7 +2818,7 @@ function Table(el)
 end
 
 function OrderedList(el)
-  if FORMAT:match 'latex' then
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
     return interior_ordered_lister(el)
   else
     return el
