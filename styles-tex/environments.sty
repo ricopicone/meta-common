@@ -1248,6 +1248,7 @@
 %% marginboxref
 \RequirePackage{fontawesome5} % cool icons, free
 % \RequirePackage[fixed]{fontawesome5}
+\newcommand{\vstuff}{} % initialize
 \newcommand{\tsstuff}{} % initialize
 \newcommand{\dsstuff}{} % initialize
 \newcommand{\bothstuff}{} % initialize
@@ -1375,11 +1376,13 @@
   m   % hash (short-slug)
   m   % type ts/ds/both/empty
 }{%
+  \renewcommand{\vstuff}{\def\iconnow{\vicon{\v}} \def\reftypenow{v}}%
   \renewcommand{\tsstuff}{\def\iconnow{\tsicon{\ts}} \def\reftypenow{ts}}%
   \renewcommand{\dsstuff}{\def\iconnow{\dsicon{\ds}} \def\reftypenow{ds}}%
   \renewcommand{\bothstuff}{\def\iconnow{} \def\reftypenow{both}}%
   \IfEqCase{#2}{%
     {}{\def\iconnow{\phantom{.}} \def\reftypenow{}}%
+    {v}{\vstuff}%
     {ts}{\tsstuff}%
     {ds}{\dsstuff}%
     {both}{\bothstuff}%
@@ -1701,6 +1704,18 @@
   }%
 }
 
+%% v
+
+\newcommand{\vicon}[1]{\tikz{\node[draw,line width=.75pt,rounded corners=2pt,inner sep=2pt,outer sep=0] at (0,0) {\footnotesize\texttt{#1}};}}
+
+\newenvironment{venv}[2]{\tsref{#1}{#2}}{}
+
+\newcommand{\vref}[2]{%
+	\defslughere
+	\qrinline{#2}{v}%
+	\idit[venv][][][v]{\slughere/#1}{#2}%
+}
+
 %% TS
 
 \newcommand{\tsicon}[1]{\tikz{\node[draw,line width=.75pt,rounded corners=2pt,inner sep=2pt,outer sep=0] at (0,0) {\footnotesize\texttt{#1}};}}
@@ -1888,6 +1903,14 @@
 	\IfEqCase{#3}{% skip if inherited
 		{n}{%
 			\IfEqCase{#1}{%
+        {v}{%
+          \def\sourcefilename{\versionedpath/#2/index.tex}
+          \IfFileExists{\sourcefilename}{%
+            \input{\sourcefilename}
+          }{%
+            \message{Warning: no versioned source file \sourcefilename}
+          }
+        }%
 				{ts}{%
 					\def\sourcefilename{\versionedpath/#2/index.tex}
 					\IfFileExists{\sourcefilename}{%
@@ -1969,9 +1992,20 @@
 \makeatletter
 \NewDocumentCommand{\defthissubsecversioned}{m}{%
 	\IfEqCase{#1}{%
+    {v}{%
+      \def\thissubsecversioned{v}
+      \IfEqCase{\thissubsecversioned}{%
+        {v}{\def\vinherited{y}}%
+        {ts}{\def\vinherited{n}}%
+        {ds}{\def\vinherited{n}}%
+        {both}{\def\vinherited{n}}%
+        {}{\def\vinherited{n}}%
+      }%
+    }%
 		{ts}{%
 			\def\thissubsecversioned{ts}
 			\IfEqCase{\thissecversioned}{%
+        {v}{\def\vinherited{n}}%
 				{ts}{\def\vinherited{y}}%
 				{ds}{\def\vinherited{n}}%
         {both}{\def\vinherited{n}}%
@@ -1981,6 +2015,7 @@
 		{ds}{
 			\def\thissubsecversioned{ds}
 			\IfEqCase{\thissecversioned}{%
+        {v}{\def\vinherited{n}}%
 				{ts}{\def\vinherited{n}}%
 				{ds}{\def\vinherited{y}}%
         {both}{\def\vinherited{n}}%
@@ -1990,6 +2025,7 @@
     {both}{
       \def\thissubsecversioned{both}
       \IfEqCase{\thissecversioned}{%
+        {v}{\def\vinherited{y}}%
         {ts}{\def\vinherited{n}}%
         {ds}{\def\vinherited{n}}%
         {both}{\def\vinherited{y}}%
@@ -1998,6 +2034,7 @@
     }%
 		{}{%
 			\IfEqCase{\thissecversioned}{%
+        {v}{\def\thissubsecversioned{v}\def\vinherited{y}}%
 				{ts}{\def\thissubsecversioned{ts}\def\vinherited{y}}%
 				{ds}{\def\thissubsecversioned{ds}\def\vinherited{y}}%
         {both}{\def\thissubsecversioned{both}\def\vinherited{y}}%
@@ -2366,11 +2403,13 @@
 		\def\specificv{no} % not a versioned section
 	}{% provided versioning
 		\IfEqCase{#4}{%
+      {v}{\def\specificv{v}}%
 			{ts}{\def\specificv{ts}}%
 			{ds}{\def\specificv{ds}}%
       {both}{\def\specificv{both}}%
 		}%
 	}%
+  \def\thisv{\v}% use this doc's versions
 	\def\thists{\ts}% use this doc's versions
 	\def\thisds{\ds}% use this doc's versions
   \def\idtitle{\unexpanded{#2}}% default: don't expand macros
@@ -2403,6 +2442,7 @@
 		"title": "\idtitle",
 		"url": "#3",
 		"v-specific": "\specificv",
+    "v": "\thisv",
 		"v-ts": "\thists",
 		"v-ds": "\thisds",
 		"ch": "\thechapter",
