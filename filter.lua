@@ -1458,7 +1458,12 @@ function figurer(el,nofloat)
     end
     -- get figcaption options
     local caption = image.caption
-    local attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
+    local attributes
+    if el.content[1].content[1].attr then
+      attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
+    else
+      attributes = {}
+    end
     figcaption_keys = {"color","format","credit","permission","reprint","territory","language","edition","fair","publicity","size","permissioncomment","layoutcomment"}
     options = "["
     i = 0
