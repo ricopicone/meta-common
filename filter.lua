@@ -2247,10 +2247,16 @@ local function example_solution(el)
   local content = pandoc.write(content_doc,'latex')
   content = delimiter_dollar(content)
   if el.classes:includes('example-solution') then
-    return pandoc.RawBlock('latex',
-      "\\tcblower\n".. 
-      content
-    )
+    -- Only add tcblower if there's actual content (not just whitespace)
+    if content:match("%S") then
+      return pandoc.RawBlock('latex',
+        "\\tcblower\n".. 
+        content
+      )
+    else
+      -- Empty solution, return nothing
+      return pandoc.RawBlock('latex', "")
+    end
   else
     return pandoc.RawBlock('latex',
       content
