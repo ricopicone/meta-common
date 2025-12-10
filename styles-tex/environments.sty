@@ -979,6 +979,11 @@
         ([xshift=-\boxlinesoff]frame.south east) --
         ([xshift=-20pt]frame.south east);
       % highlight above tcblower
+        \ifcase\tcbsegmentstate%
+          % 0 = Box contains only an upper part (no tcblower)
+          % Don't draw segmentation lines
+        \or%
+          % 1 = Box contains an upper and a lower part
         \draw[c2,boxlines]
           ([xshift=-\boxlinesofftwo]frame.north west) --
           ([xshift=-\boxlinesofftwo]frame.north west |- segmentation.west);
@@ -991,6 +996,10 @@
         \draw[c2,boxlines]
           ([xshift=-\boxlinesoffthree]segmentation.east) --
           ([xshift=-18.5pt]segmentation.east);
+        \else%
+          % 2 = Box contains only a lower part
+          % can't happen here
+        \fi%
       },
     % Handles multipage box: first page
     overlay first={%

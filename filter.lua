@@ -243,17 +243,10 @@ local interior_filter = {
   end,
   Figure = function(el)
     return Figure(el)
-  end
-  -- Image = function(el)
-  --   print(el)
-  --   print(el.classes)
-  --   if el.caption then
-  --     return el
-  --   else
-  --     el.caption = "cap"
-  --     return imager(el)
-  --   end
-  -- end,
+  end,
+  Image = function(el)
+    return Image(el)
+  end,
 }
 
 local function delimiter_dollar(text)
@@ -931,7 +924,7 @@ local function multihashref(el, cap)
         j = j + 1
       end
     end
-    print(formatted_hashes)
+    -- print(formatted_hashes)
     return pandoc.Span(formatted_hashes)
   end
 end
@@ -941,7 +934,7 @@ local function hashrefer(el)
   local text = pandoc.utils.stringify(content)
   local cap = false
   if el.classes:includes('Hashref') then
-    print('Hashref')
+    -- print('Hashref')
     cap = true
   end
   if FORMAT:match 'latex' or FORMAT:match 'beamer' then
@@ -1395,7 +1388,34 @@ function imager(el)
     -- return
     return pandoc.RawInline('latex', graphics_command)
   else
-    return el
+    -- For html, we might need to deal with the filename stuff, if it hasn't been done already by the figurer function
+    -- If el.src includes assets in the path, then we don't need to do anything
+    local src_string = pandoc.utils.stringify(el.src)
+    print(src_string)
+    if string.match(src_string,'assets') then
+      return el
+    else
+      local stripped = string.gsub(el.src,"common/",'')
+      local path
+      local file
+      local ext
+      path,file,ext = split_filename(stripped)
+      local fname
+      if (ext == nil or ext == '') then
+        fname = path..file..'svg'
+      elseif (ext == 'pdf' or ext == 'pgf') then
+        fname = string.gsub(path..file,'%.pdf','.svg')
+        fname = string.gsub(fname,'%.pgf','.svg')
+      else -- already has extension
+        fname = stripped
+      end
+      el.src = '/assets/' .. fname -- because relative src is to page in html
+      -- normalize svg width because it looks small on the site
+      -- if ext == 'svg' then
+      -- el.attr.attributes['width'] = "120%"
+      -- end
+      return el
+    end
   end
 end
 
@@ -1438,7 +1458,12 @@ function figurer(el,nofloat)
     end
     -- get figcaption options
     local caption = image.caption
-    local attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
+    local attributes
+    if el.content[1].content[1].attr then
+      attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
+    else
+      attributes = {}
+    end
     figcaption_keys = {"color","format","credit","permission","reprint","territory","language","edition","fair","publicity","size","permissioncomment","layoutcomment"}
     options = "["
     i = 0
@@ -1475,22 +1500,25 @@ function figurer(el,nofloat)
       fig_end
     return pandoc.RawInline('latex', fig_tex)
   elseif FORMAT:match 'html' then
-    -- deal with filename stuff
-    local stripped = string.gsub(image.src,"common/",'')
-    local path
-    local file
-    local ext
-    path,file,ext = split_filename(stripped)
-    local fname
-    if (ext == nil or ext == '') then
-      fname = path..file..'svg'
-    elseif (ext == 'pdf' or ext == 'pgf') then
-      fname = string.gsub(path..file,'%.pdf','.svg')
-      fname = string.gsub(fname,'%.pgf','.svg')
-    else -- already has extension
-      fname = stripped
-    end
-    image.src = '/assets/' .. fname -- because relative src is to page in html
+    -- -- deal with filename stuff -- now handled by imager
+    -- print(el)
+    -- print(image)
+    -- print(image.t)
+    -- local stripped = string.gsub(image.src,"common/",'')
+    -- local path
+    -- local file
+    -- local ext
+    -- path,file,ext = split_filename(stripped)
+    -- local fname
+    -- if (ext == nil or ext == '') then
+    --   fname = path..file..'svg'
+    -- elseif (ext == 'pdf' or ext == 'pgf') then
+    --   fname = string.gsub(path..file,'%.pdf','.svg')
+    --   fname = string.gsub(fname,'%.pgf','.svg')
+    -- else -- already has extension
+    --   fname = stripped
+    -- end
+    -- image.src = '/assets/' .. fname -- because relative src is to page in html
     -- normalize svg width because it looks small on the site
     -- if ext == 'svg' then
     -- image.attr.attributes['width'] = "120%"
@@ -1539,7 +1567,7 @@ function figurer(el,nofloat)
     local fig_number = book_value("0",el_id,"number")
     if fig_number == nil then fig_number = "" end
     caption = "Figure "..fig_number..": "..caption
-    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" alt=\" Figure "..fig_number.."\" "..options..">"
+    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" "..options..">"
     local fig_caption = "<figcaption>"..caption.."</figcaption>"
     local fig_html = 
       fig_begin .."\n"..
@@ -1690,7 +1718,106 @@ local function figurediver(el)
     return pandoc.RawBlock('latex', fig_tex)
 
   elseif FORMAT:match 'html' then
-    return el 
+    -- Parse into a figure with subfigure img elements, subcaptions, and a figure caption
+    -- Get the number of rows
+    local rows = el.attr.attributes['rows']
+    if not rows then
+      rows = 1
+    else
+      rows = tonumber(rows)
+    end
+    -- Get the caption
+    -- See if the last element is an Image object (otherwise, it's a caption)
+    local last_el = el.content[#el.content].content[1]
+    local n_subfigures
+    local caption
+    local caption_plain
+    if last_el.t == 'Image' then
+      n_subfigures = #el.content
+      caption = pandoc.Para{}
+    else
+      n_subfigures = #el.content-1
+      caption = el.content[#el.content]
+    end
+    caption_plain = el.attr.attributes['caption_plain']
+    local caption_doc = pandoc.Pandoc(caption)
+    local caption_html = pandoc.write(caption_doc, 'html')
+    -- Get the subfigures
+    local subfigures = {}
+    for i = 1, n_subfigures do
+      subfigures[i] = el.content[i].content[1]
+    end
+    -- Extract the source file name, caption, and label from each subfigure
+    local subfigure_captions = {}
+    local subfigure_srcs = {}
+    local subfigure_labels = {}
+    local subfigure_classes = {}
+    for i = 1, #subfigures do
+      local subfigure_image
+      if subfigures[i].t == 'Image' then
+        subfigure_image = subfigures[i]
+      else -- Plain (not sure why this happens)
+        subfigure_image = subfigures[i].content[1]
+      end
+      -- Subfigure caption
+      subfigure_captions[i] = subfigure_image.caption
+      if subfigure_captions[i] == nil or isempty(subfigure_captions[i]) then
+        subfigure_captions[i] = ""
+      end
+      --- Parse subfigure caption as html
+      local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[i])
+      subfigure_captions[i] = pandoc.write(subfigure_caption_doc,'html')
+      --- Now stringify the caption
+      subfigure_captions[i] = pandoc.utils.stringify(subfigure_captions[i])
+      -- Image source
+      subfigure_srcs[i] = subfigure_image.src
+      if subfigure_srcs[i] == nil then
+        subfigure_srcs[i] = ""
+      end
+      --- Add the /assets/ prefix, remove the common/ prefix, and replace .pdf with .svg extension
+      subfigure_srcs[i] = '/assets/' .. string.gsub(subfigure_srcs[i],"common/",'')
+      subfigure_srcs[i] = string.gsub(subfigure_srcs[i],'%.pdf','.svg')
+      subfigure_srcs[i] = string.gsub(subfigure_srcs[i],'%.pgf','.svg')
+      -- Label
+      subfigure_labels[i] = subfigure_image.identifier
+      if subfigure_labels[i] == nil then
+        random_number = math.random(1000000)
+        subfigure_labels[i] = "fig:auto-" .. random_number
+      end
+      -- Classes
+      subfigure_classes[i] = subfigure_image.classes
+      if subfigure_classes[i] == nil then
+        subfigure_classes[i] = {}
+      end
+    end
+    -- Construct the HTML code
+    local fig_html = "<figure class=\"real-figure\" id=\""..el.identifier.."\">\n"
+    -- Construct the subfigures
+    local cols = math.ceil(n_subfigures/rows)
+    local current_row = 1
+    fig_html = fig_html .. "<div class=\"subfigures\">\n"
+    for i = 1, #subfigures do
+      if math.fmod(i-1,cols) == 0 and i ~= 1 then
+        current_row = current_row + 1
+      end
+      -- Append the subfigure
+      fig_html = fig_html .. "<div class=\"subfigure\">\n" ..
+        "<img src=\"" .. subfigure_srcs[i] .. "\" alt=\"Subfigure " .. i .. "\">\n" ..
+        "<p class=\"subcaption\">" .. subfigure_captions[i] .. "</p>\n" ..
+        "</div>\n"
+    end
+    fig_html = fig_html .. "</div>\n"
+    -- Construct the caption
+    --- Get the figure number from the book json
+    local fig_number = book_value("0",el.identifier,"number")
+    if fig_number == nil then fig_number = "" end
+    local caption_colon = ": "
+    if caption_html == "" then
+      caption_colon = ""
+    end
+    fig_html = fig_html .. "<figcaption>Figure " .. fig_number .. caption_colon .. caption_html .. "</figcaption>\n" ..
+      "</figure>\n"
+    return pandoc.RawBlock('html', fig_html)
   else
     return el 
   end
@@ -1762,8 +1889,8 @@ local function algorithmerLATEX(el)
   local file
   local ext
   path,file,ext = split_filename(stripped)
-  print(path)
-  print(file)
+  -- print(path)
+  -- print(file)
   if FORMAT:match 'beamer' then
     -- Remove the leading editable/ from the path
     path = string.gsub(path,'editable/','')
@@ -1772,7 +1899,7 @@ local function algorithmerLATEX(el)
   end
   local fname = "common/"..path..file..'tex'
   -- read file as raw latex
-  print('fname: '..fname)
+  -- print('fname: '..fname)
   local f = io.open(fname, "r")
   local content = f:read("*all")
   f:close()
@@ -1949,10 +2076,42 @@ local function exerciser(el)
     local hash = el.attr.attributes['h']
     local hash_alt = el.attr.attributes['hash']
     if not hash then if not hash_alt then hash = '' else hash=hash_alt end end
-    local data = book_value("0",hash,"problem-num")
-    if data == nil then data = "" end
-    el.attr.attributes['data-problem-num'] = data
-    return el
+    local data_problem_num = book_value("0",hash,"problem-num")
+    if data_problem_num == nil then data = "" end
+    el.attr.attributes['data-problem-num'] = data_problem_num
+    -- Insert a title from data using the problem number and the hash (e.g., Problem 9.1 (HASH)). Capitalize all letters in the hash.
+    HASH = string.upper(hash)
+    local title = {}
+    title[1] = "Problem "..data_problem_num.." ("
+    title[2] = pandoc.Span(HASH, {class='problem-hash'})
+    title[3] = ")"
+    el.content:insert(1,pandoc.Header(2,title,{class='problem-title'}))
+    -- Figure out of this is the first problem in a chapter (e.g., does data_problem_num end in .1)
+    if string.match(data_problem_num,"%.1$") then
+      -- Get the chapter number
+      local chapter_num = book_value("0",hash,"ch")
+      -- Search through the book json for the section hash that has the same chapter number and the title "Problems" (this will be the header h attribute)
+      local problems_section_hash
+      for k,v in pairs(book["0"]) do
+        if v["ch"] == chapter_num and v["title"] == "Problems" then
+          problems_section_hash = k
+          break
+        end
+      end
+      -- Get the previous and next section hashes
+      local prev_section_hash = book_value("0",problems_section_hash,"prev")
+      local next_section_hash = book_value("0",problems_section_hash,"next")
+      -- Insert a Header with the section header Problems
+      local title = "Problems"
+      el.content:insert(1,pandoc.Header(1,title,{class='real-section level1'}))
+      -- Add hash h attribute, previous section hash, and next section hash to the section header
+      el.content[1].attr.attributes['h'] = problems_section_hash
+      el.content[1].attr.attributes['prev'] = prev_section_hash
+      el.content[1].attr.attributes['next'] = next_section_hash
+    end
+    -- Walk with interior_filter
+    el_walked = pandoc.walk_block(el,interior_filter)
+    return el_walked
   end
 end
 
@@ -2088,10 +2247,16 @@ local function example_solution(el)
   local content = pandoc.write(content_doc,'latex')
   content = delimiter_dollar(content)
   if el.classes:includes('example-solution') then
-    return pandoc.RawBlock('latex',
-      "\\tcblower\n".. 
-      content
-    )
+    -- Only add tcblower if there's actual content (not just whitespace)
+    if content:match("%S") then
+      return pandoc.RawBlock('latex',
+        "\\tcblower\n".. 
+        content
+      )
+    else
+      -- Empty solution, return nothing
+      return pandoc.RawBlock('latex', "")
+    end
   else
     return pandoc.RawBlock('latex',
       content
@@ -2100,9 +2265,9 @@ local function example_solution(el)
 end
 
 local function example_solution_html(el)
-  print(dump(el))
+  -- print(dump(el))
   local el_walked = pandoc.walk_block(el,interior_filter)
-  print(dump(el_walked))
+  -- print(dump(el_walked))
   local content_doc = pandoc.Pandoc(el_walked.content)
   local content = pandoc.write(content_doc,'html')
   content = delimiter_dollar(content)
@@ -2471,6 +2636,16 @@ end
 --   end
 -- end
 
+function Image(el)
+  if FORMAT:match 'latex' or FORMAT:match 'beamer' then
+    return imager(el)
+  elseif FORMAT:match 'html' then
+    return imager(el)
+  else
+    return el
+  end
+end
+
 function Link(el)
   if el.classes:includes('myurl') then
     return myurler(el)
@@ -2546,7 +2721,7 @@ function Div(el)
     if el.classes:includes('infobox') then
       return infoboxer(el)
     elseif el.classes:includes('listing') then
-      print("HI")
+      -- print("HI")
       return listinger(el)
     elseif el.classes:includes('output') then
       return outputer(el)
@@ -2651,15 +2826,19 @@ function Math(el)
 end
 
 function Figure(el)
-  if el.content[1].content[1].classes:includes('algorithm') then
-    if FORMAT:match 'latex' or FORMAT:match 'beamer' then
-      return algorithmerLATEX(el)
-    elseif FORMAT:match 'html' then
-      return algorithmerHTML(el)
-    else
-      return el
+  print(el)
+  if el.content[1].content[1].classes then
+    if el.content[1].content[1].classes:includes('algorithm') then
+      if FORMAT:match 'latex' or FORMAT:match 'beamer' then
+        return algorithmerLATEX(el)
+      elseif FORMAT:match 'html' then
+        return algorithmerHTML(el)
+      else
+        return el
+      end
     end
-  elseif el.classes:includes('nofloat') then
+  end
+  if el.classes:includes('nofloat') then
     return figurer(el,true) -- making all figures nofloat
   elseif el.classes:includes('figure') then
     return figurer(el,true) -- making all figures nofloat
@@ -2777,8 +2956,8 @@ function tabler_latex(el)
   local function render_table(tbl)
     local caption = get_table_caption(tbl)
     local identifier = get_table_id(tbl)
-    print('table identifier: '..identifier)
-    print(dump(tbl))
+    -- print('table identifier: '..identifier)
+    -- print(dump(tbl))
     local caption_text
     if caption then
       caption_text = pandoc.utils.stringify(caption)

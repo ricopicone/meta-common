@@ -1,0 +1,24 @@
+\RequirePackage{algorithm}
+\RequirePackage[%
+  italicComments=false,%
+  rightComments=true,%
+  commentColor=light-gray,%
+  % beginComment=%
+]{algpseudocodex}
+\tikzset{algpxIndentLine/.style={draw,line width=.5pt,gray,line join=round,line cap=round,rounded corners=3pt}}
+%% \def\Vhrulefill{\leavevmode\leaders\hrule height 0.7ex depth \dimexpr0.4pt-0.7ex\hfill\kern0pt}
+% \RequirePackage{xhfill}
+% \algrenewcomment[2][.5\linewidth]{%
+% \quad\xrfill[.5ex]{.5pt}[gray]\makebox[#1][l]{\color{gray}#2} % kinda worked but linespread got messed up
+% }%
+\let\oldComment\Comment
+\renewcommand{\Comment}[2][.5\linewidth]{\oldComment{#2}}
+\let\oldState\State
+\usepackage{mfirstuc}%
+% \MFUblocker{\NoCaseChange}%
+\MFUexcl{\textbf}
+\renewcommand{\State}[1]{\oldState{\makefirstuc{#1}}} % this caused problems with arguments that start with commands or math ... going to try to manually capitalize the first letter instead
+
+\newenvironment{algorithmcenter}
+ {\setlength{\textfloatsep}{0pt}\setlength{\intextsep}{0pt}\parskip=0pt\par\vspace{.5\baselineskip}\centering}
+ {\par\vspace{.5\baselineskip}}
