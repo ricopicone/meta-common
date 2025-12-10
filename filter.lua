@@ -1486,7 +1486,7 @@ function figurer(el,nofloat)
     else
       caption = pandoc.Para(caption)
       caption = pandoc.walk_block(caption,inline_filter)
-      local caption_doc = pandoc.Pandoc(caption)
+      local caption_doc = pandoc.Pandoc({caption})
       caption = pandoc.write(caption_doc,'latex')
     end
     -- construct latex figure
@@ -1523,7 +1523,7 @@ function figurer(el,nofloat)
     else
       caption = pandoc.Para(caption)
       caption = pandoc.walk_block(caption,inline_filter)
-      local caption_doc = pandoc.Pandoc(caption)
+      local caption_doc = pandoc.Pandoc({caption})
       caption = pandoc.write(caption_doc,'html')
       caption = string.gsub(caption,'<p>','')
       caption = string.gsub(caption,'</p>','')
@@ -1654,7 +1654,7 @@ local function figurediver(el)
           subfigure_captions[subfigure_count] = ""
         end
         --- Parse subfigure caption as latex
-        local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[subfigure_count])
+        local subfigure_caption_doc = pandoc.Pandoc({subfigure_captions[subfigure_count]})
         subfigure_captions[subfigure_count] = pandoc.write(subfigure_caption_doc,'latex')
         --- Now stringify the caption
         subfigure_captions[subfigure_count] = pandoc.utils.stringify(subfigure_captions[subfigure_count])
@@ -1725,7 +1725,7 @@ local function figurediver(el)
         filler_after
     end
     -- Construct the caption
-    local caption_doc = pandoc.Pandoc(caption)
+    local caption_doc = pandoc.Pandoc({caption})
     local caption_tex = pandoc.write(caption_doc,'latex')
     fig_tex = fig_tex .. "\\figcaption{" .. el.identifier .. "}{" .. caption_tex .. "}\n" ..
       "\\end{figure}\n"
@@ -1754,7 +1754,7 @@ local function figurediver(el)
       caption = el.content[#el.content]
     end
     caption_plain = el.attr.attributes['caption_plain']
-    local caption_doc = pandoc.Pandoc(caption)
+    local caption_doc = pandoc.Pandoc({caption})
     local caption_html = pandoc.write(caption_doc, 'html')
     -- Get the subfigures
     local subfigures = {}
@@ -1779,7 +1779,7 @@ local function figurediver(el)
         subfigure_captions[i] = ""
       end
       --- Parse subfigure caption as html
-      local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[i])
+      local subfigure_caption_doc = pandoc.Pandoc({subfigure_captions[i]})
       subfigure_captions[i] = pandoc.write(subfigure_caption_doc,'html')
       --- Now stringify the caption
       subfigure_captions[i] = pandoc.utils.stringify(subfigure_captions[i])
@@ -1864,7 +1864,7 @@ local function algorithmerHTML(el)
   else
     caption = pandoc.Para(caption)
     caption = pandoc.walk_block(caption,inline_filter)
-    local caption_doc = pandoc.Pandoc(caption)
+    local caption_doc = pandoc.Pandoc({caption})
     caption = pandoc.write(caption_doc,'html')
     caption = string.gsub(caption,'<p>','')
     caption = string.gsub(caption,'</p>','')
@@ -1927,7 +1927,7 @@ local function algorithmerLATEX(el)
   else
     caption = pandoc.Para(caption)
     caption = pandoc.walk_block(caption,inline_filter)
-    local caption_doc = pandoc.Pandoc(caption)
+    local caption_doc = pandoc.Pandoc({caption})
     caption = pandoc.write(caption_doc,'latex')
   end
   -- get the label from the identifier
@@ -2138,7 +2138,7 @@ local function listinger(el)
     if el.attr.attributes['caption'] then
       local caption_pre = pandoc.read(caption,'markdown').blocks[1]
       local caption_walked = pandoc.walk_block(caption_pre,interior_filter)
-      local caption_doc = pandoc.Pandoc(caption_walked)
+      local caption_doc = pandoc.Pandoc({caption_walked})
       caption = pandoc.write(caption_doc,'latex')
     else
       caption = ''
@@ -2885,7 +2885,7 @@ function get_table_caption(el)
   local caption = el.caption
   -- Convert the caption to a Pandoc document
   caption = pandoc.walk_block(caption, interior_filter)
-  caption_doc = pandoc.Pandoc(caption)
+  caption_doc = pandoc.Pandoc({caption})
   if FORMAT:match 'html' then
     caption = pandoc.write(caption_doc, 'html')
     -- Remove the identifier from the caption, which is in the form {#identifier} at the end
