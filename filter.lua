@@ -1391,11 +1391,11 @@ function imager(el)
     -- For html, we might need to deal with the filename stuff, if it hasn't been done already by the figurer function
     -- If el.src includes assets in the path, then we don't need to do anything
     local src_string = pandoc.utils.stringify(el.src)
-    print(src_string)
     if string.match(src_string,'assets') then
       return el
     else
-      local stripped = string.gsub(el.src,"common/",'')
+      local stripped = string.gsub(el.src,"common-text/",'')
+      stripped = string.gsub(el.src,"common/",'')
       local path
       local file
       local ext
@@ -1500,29 +1500,6 @@ function figurer(el,nofloat)
       fig_end
     return pandoc.RawInline('latex', fig_tex)
   elseif FORMAT:match 'html' then
-    -- -- deal with filename stuff -- now handled by imager
-    -- print(el)
-    -- print(image)
-    -- print(image.t)
-    -- local stripped = string.gsub(image.src,"common/",'')
-    -- local path
-    -- local file
-    -- local ext
-    -- path,file,ext = split_filename(stripped)
-    -- local fname
-    -- if (ext == nil or ext == '') then
-    --   fname = path..file..'svg'
-    -- elseif (ext == 'pdf' or ext == 'pgf') then
-    --   fname = string.gsub(path..file,'%.pdf','.svg')
-    --   fname = string.gsub(fname,'%.pgf','.svg')
-    -- else -- already has extension
-    --   fname = stripped
-    -- end
-    -- image.src = '/assets/' .. fname -- because relative src is to page in html
-    -- normalize svg width because it looks small on the site
-    -- if ext == 'svg' then
-    -- image.attr.attributes['width'] = "120%"
-    -- end
     -- get figcaption options
     local attributes = el.content[1].content[1].attr.attributes -- Now nested down inside Image
     figcaption_keys = {"color","format","credit","permission","reprint","territory","language","edition","fair","publicity","size","permissioncomment","layoutcomment"}
@@ -1552,6 +1529,14 @@ function figurer(el,nofloat)
       caption = string.gsub(caption,'</p>','')
       caption = string.gsub(caption,'\n',' ')
     end
+    -- content, essentially Image
+    local el_walked = pandoc.walk_block(el,{
+      Image = function(el)
+        return imager(el)
+      end,
+    })
+    local content_doc = pandoc.Pandoc(el_walked.content)
+    local content = pandoc.write(content_doc,'html')
     -- construct html figure
     local el_id = el.identifier
     if el_id == nil then
@@ -1559,19 +1544,19 @@ function figurer(el,nofloat)
     end
     local fig_begin = "<figure class=\"real-figure\" id=\""..el_id.."\">"
     local fig_end = "</figure>"
-    local img_classes = ""
-    for i, c in ipairs(image.classes) do
-      img_classes = img_classes .. c .. " "
-    end
+    -- local img_classes = ""
+    -- for i, c in ipairs(image.classes) do
+    --   img_classes = img_classes .. c .. " "
+    -- end
     -- get the figure number from the book json
     local fig_number = book_value("0",el_id,"number")
     if fig_number == nil then fig_number = "" end
     caption = "Figure "..fig_number..": "..caption
-    local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" "..options..">"
+    -- local img_content = "<img src=\""..image.src.."\" class=\""..img_classes.."\" "..options..">"
     local fig_caption = "<figcaption>"..caption.."</figcaption>"
     local fig_html = 
       fig_begin .."\n"..
-      img_content .."\n"..
+      content .."\n"..
       fig_caption .."\n"..
       fig_end
     return pandoc.RawInline('html',fig_html)
@@ -1634,69 +1619,98 @@ local function figurediver(el)
     end
     caption_plain = el.attr.attributes['caption_plain']
     -- Get the subfigures
-    local subfigures = {}
+    local subfigure_blocks = {}
     for i = 1, n_subfigures do
-      subfigures[i] = el.content[i].content[1]
+      subfigure_blocks[i] = el.content[i]
     end
     -- Extract the source file name, caption, and label from each subfigure
     local subfigure_captions = {}
     local subfigure_srcs = {}
     local subfigure_labels = {}
     local subfigure_classes = {}
-    for i = 1, #subfigures do
+    local subfigure_widths = {}
+    local subfigure_count = 0
+    for i = 1, #subfigure_blocks do
       local subfigure_image
-      if subfigures[i].t == 'Image' then
-        subfigure_image = subfigures[i]
-      else -- Plain (not sure why this happens)
-        subfigure_image = subfigures[i].content[1]
+      if subfigure_blocks[i].t == 'Figure' then
+        local figure_content = subfigure_blocks[i].content and subfigure_blocks[i].content[1]
+        if figure_content and figure_content.t == 'Plain' and figure_content.content[1] and figure_content.content[1].t == 'Image' then
+          subfigure_image = figure_content.content[1]
+        elseif figure_content and figure_content.t == 'Para' and figure_content.content[1] and figure_content.content[1].t == 'Image' then
+          subfigure_image = figure_content.content[1]
+        end
+      elseif subfigure_blocks[i].t == 'Image' then
+        subfigure_image = subfigure_blocks[i]
+      elseif subfigure_blocks[i].t == 'Para' and subfigure_blocks[i].content and subfigure_blocks[i].content[1] and subfigure_blocks[i].content[1].t == 'Image' then
+        subfigure_image = subfigure_blocks[i].content[1]
+      else
+        subfigure_image = subfigure_blocks[i].content and subfigure_blocks[i].content[1] or subfigure_blocks[i]
       end
-      -- Subfigure caption
-      subfigure_captions[i] = subfigure_image.caption
-      if subfigure_captions[i] == nil or isempty(subfigure_captions[i]) then
-        subfigure_captions[i] = ""
-      end
-      --- Parse subfigure caption as latex
-      local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[i])
-      subfigure_captions[i] = pandoc.write(subfigure_caption_doc,'latex')
-      --- Now stringify the caption
-      subfigure_captions[i] = pandoc.utils.stringify(subfigure_captions[i])
-      -- Image source
-      subfigure_srcs[i] = subfigure_image.src
-      if subfigure_srcs[i] == nil then
-        subfigure_srcs[i] = ""
-      end
-      -- Label
-      subfigure_labels[i] = subfigure_image.identifier
-      if subfigure_labels[i] == nil then
-        random_number = math.random(1000000)
-        subfigure_labels[i] = "fig:auto-" .. random_number
-      end
-      -- Classes
-      subfigure_classes[i] = subfigure_image.classes
-      if subfigure_classes[i] == nil then
-        subfigure_classes[i] = {}
+      if subfigure_image ~= nil then
+        subfigure_count = subfigure_count + 1
+        -- Subfigure caption
+        subfigure_captions[subfigure_count] = subfigure_image.caption
+        if subfigure_captions[subfigure_count] == nil or isempty(subfigure_captions[subfigure_count]) then
+          subfigure_captions[subfigure_count] = ""
+        end
+        --- Parse subfigure caption as latex
+        local subfigure_caption_doc = pandoc.Pandoc(subfigure_captions[subfigure_count])
+        subfigure_captions[subfigure_count] = pandoc.write(subfigure_caption_doc,'latex')
+        --- Now stringify the caption
+        subfigure_captions[subfigure_count] = pandoc.utils.stringify(subfigure_captions[subfigure_count])
+        -- Image source
+        subfigure_srcs[subfigure_count] = subfigure_image.src
+        if subfigure_srcs[subfigure_count] == nil then
+          subfigure_srcs[subfigure_count] = ""
+        end
+        -- Label
+        subfigure_labels[subfigure_count] = subfigure_image.identifier
+        if (subfigure_labels[subfigure_count] == nil or subfigure_labels[subfigure_count] == "") and subfigure_blocks[i].identifier then
+          subfigure_labels[subfigure_count] = subfigure_blocks[i].identifier
+        end
+        if subfigure_labels[subfigure_count] == nil or subfigure_labels[subfigure_count] == "" then
+          random_number = math.random(1000000)
+          subfigure_labels[subfigure_count] = "fig:auto-" .. random_number
+        end
+        -- Classes
+        subfigure_classes[subfigure_count] = subfigure_image.classes
+        if subfigure_classes[subfigure_count] == nil then
+          subfigure_classes[subfigure_count] = {}
+        end
+        subfigure_widths[subfigure_count] = subfigure_image.attributes['figwidth']
+        if subfigure_widths[subfigure_count] == nil and subfigure_blocks[i].attr and subfigure_blocks[i].attr.attributes then
+          subfigure_widths[subfigure_count] = subfigure_blocks[i].attr.attributes['figwidth']
+        end
       end
     end
     -- Construct the LaTeX code
     local fig_tex = "\\begin{figure}[H]\n" ..
       "\\centering\n"
     -- Construct the subfigures
-    local cols = math.ceil(n_subfigures/rows)
+    local cols = math.ceil(subfigure_count/rows)
     local current_row = 1
     local subcaption_width = 1/cols - 0.05
     fig_tex = fig_tex .. "% Row 1\n"
-    for i = 1, #subfigures do
+    for i = 1, subfigure_count do
       if math.fmod(i-1,cols) == 0 and i ~= 1 then
         current_row = current_row + 1
         fig_tex = fig_tex .. "\\\\\n% Row " .. current_row .. "\n"
       end
       -- Determine which graphics command to use
+      local img_width_param = ""
+      local box_width_str
+      if subfigure_widths[i] then
+        box_width_str = subfigure_widths[i]
+        img_width_param = "[width=1\\linewidth]"
+      else
+        box_width_str = subcaption_width .."\\linewidth"
+      end
       if subfigure_classes[i]:includes('standalone') then
-        graphics_command = "\\noindent\\includegraphics{"..subfigure_srcs[i].."}" -- \includestandalone has issues with spacing subfigures
+        graphics_command = "\\noindent\\includegraphics"..img_width_param.."{"..subfigure_srcs[i].."}" -- \includestandalone has issues with spacing subfigures
       elseif subfigure_classes[i]:includes('pgf') then
         graphics_command = "\\noindent\\inputpgf{"..subfigure_srcs[i].."}"
       else
-        graphics_command = "\\noindent\\includegraphics{"..subfigure_srcs[i].."}"
+        graphics_command = "\\noindent\\includegraphics"..img_width_param.."{"..subfigure_srcs[i].."}"
       end
       local filler_before = "\\hspace*{\\fill}%\n"
       local filler_after = ""
@@ -1706,7 +1720,7 @@ local function figurediver(el)
       -- Append the subfigure
       fig_tex = fig_tex .. filler_before ..
         "\\subcaptionbox{" .. subfigure_captions[i] .. "\\label{" .. subfigure_labels[i] .. "}}" ..
-        "[".. subcaption_width .."\\linewidth]\n" ..
+        "[".. box_width_str .."]\n" ..
         "{" .. graphics_command .."}\n" ..
         filler_after
     end
@@ -2826,7 +2840,6 @@ function Math(el)
 end
 
 function Figure(el)
-  print(el)
   if el.content[1].content[1].classes then
     if el.content[1].content[1].classes:includes('algorithm') then
       if FORMAT:match 'latex' or FORMAT:match 'beamer' then
